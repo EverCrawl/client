@@ -40,6 +40,7 @@ uniform mat4 uVIEW;
 uniform mat4 uPROJECTION;
 
 uniform mat3 uMODEL;
+uniform vec4 uUV;
 
 layout(location = 0) in vec2 aPOSITION;
 layout(location = 1) in vec2 aTEXCOORD;
@@ -48,7 +49,7 @@ out vec2 vTEXCOORD;
 
 void main()
 {
-    vTEXCOORD = aTEXCOORD;
+    vTEXCOORD = aTEXCOORD * uUV.zw + uUV.xy;
     vec3 transformed = uMODEL * vec3(aPOSITION, 1.0);
     gl_Position = uPROJECTION * uVIEW * vec4(transformed.xy, 0.0, 1.0);
 }`,
@@ -124,13 +125,20 @@ void main()
      * @param rotation in radians
      * @param scale 
      */
-    draw(texture: Texture, position: Vector2 = [0, 0], rotation: number = 0, scale: Vector2 = [1, 1]) {
+    draw(
+        texture: Texture,
+        uvMin: Vector2 = [0, 0], uvMax: Vector2 = [1, 1],
+        position: Vector2 = [0, 0], rotation: number = 0, scale: Vector2 = [1, 1]
+    ) {
         const model = m3();
         m3.translate(model, position);
         m3.rotate(model, rotation);
         m3.scale(model, scale);
         this.shader.uniforms.uMODEL.set(model);
+
         texture.bind(0);
+        this.shader.uniforms.uUV.set([uvMin[0], uvMin[1], uvMax[0], uvMax[1]]);
+
         this.gl.drawElements(/* TRIANGLES */ 0x0004, 6, /* UNSIGNED_INT */ 0x1405, 0);
     }
 

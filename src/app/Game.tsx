@@ -3,6 +3,7 @@ import * as Core from "core";
 import "./Game.css";
 import AYAYA from "./img/icon_128x128.png";
 
+// TODO: hook up https://github.com/jprochazk/underworld-assets.git as submodule, pull on build/dev
 // TODO: sprite (only holds texture and animation info)
 // TODO: load + render sprites/animations from aseprite
 // TODO: load + render maps from Tiled
@@ -41,7 +42,7 @@ export default class Game extends Component {
             pos[0] += vel[0];
 
             renderer.begin(camera);
-            renderer.draw(texture, pos, Math.rad(rot), scale);
+            renderer.draw(texture, [0, 0], [1, 1], pos, Math.rad(rot), scale);
             renderer.end();
 
             requestAnimationFrame(loop);
