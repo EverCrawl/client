@@ -1,0 +1,36 @@
+* {
+    margin: 0;
+    padding: 0;
+}
+
+.container {
+    display: flex;
+}
+
+.rows {
+    flex-direction: column;
+}
+
+.center-items {
+    align-items: center;
+    text-align: center;
+}
+
+.center-items > * {
+    margin: auto;
+}
+
+/* from https://stackoverflow.com/a/4407335/11953579 */
+.noselect {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+:focus {
+    outline: none;
+    outline-width: 0;
+}
