@@ -25,6 +25,7 @@ export class Texture {
 
     public readonly gl: WebGL2RenderingContext;
     public readonly handle: WebGLTexture;
+    public readonly image: HTMLImageElement;
 
     constructor(
         gl: WebGL2RenderingContext,
@@ -42,17 +43,26 @@ export class Texture {
         this.gl = gl;
         this.handle = createTexture(this.gl);
 
-        let image = Texture.imageCache.get(url);
-        if (image) {
-            sampleImage(this.gl, this.handle, image, target, options);
+        const img = Texture.imageCache.get(url);
+        if (img) {
+            this.image = img;
+            sampleImage(this.gl, this.handle, this.image, target, options);
         } else {
-            image = new Image();
-            image.onload = () => {
-                Texture.imageCache.set(url, image!);
-                sampleImage(this.gl, this.handle, image!, target, options);
+            this.image = new Image();
+            this.image.onload = () => {
+                Texture.imageCache.set(url, this.image);
+                sampleImage(this.gl, this.handle, this.image, target, options);
             }
-            image.src = url;
+            this.image.src = url;
         }
+    }
+
+    get width() {
+        return this.image.naturalWidth;
+    }
+
+    get height() {
+        return this.image.naturalHeight;
     }
 
     bind(slot: TextureSlot) {

@@ -1,13 +1,18 @@
-import { m3, Vector2 } from "core/math";
-import { Buffer } from "./Buffer";
-import { Camera } from "./Camera";
-import { Shader } from "./Shader";
-import { Texture } from "./Texture";
-import { VertexArray } from "./VertexArray";
-import { Viewport } from "./Viewport";
+import {
+    Matrix3, m3, Vector2, v2, Vector4, v4
+} from "core/math";
+import {
+    Buffer, Camera, Shader, Texture, VertexArray, Viewport
+} from "core/gfx";
 
 interface RendererOptions {
     clearColor: [number, number, number, number];
+}
+
+interface RenderCommand {
+    texture: Texture;
+    uv: Vector4;
+    model: Matrix3;
 }
 
 export class Renderer {
@@ -20,6 +25,8 @@ export class Renderer {
         vertex: Buffer, index: Buffer
     };
     private vertexArray: VertexArray;
+
+    private commandBuffer: { [layer: number]: RenderCommand[] };
 
     constructor(
         gl: WebGL2RenderingContext,
@@ -97,14 +104,15 @@ void main()
             ]
         );
 
+        this.commandBuffer = {};
+
         this.gl.clearColor(...options.clearColor);
         this.gl.enable(this.gl.BLEND);
         this.gl.blendFunc(this.gl.SRC_ALPHA, this.gl.ONE_MINUS_SRC_ALPHA);
     }
 
     /**
-     * Begin the scene
-     * @param camera 
+     * Begin recording commands
      */
     begin(camera: Camera) {
         this.gl.clear(this.gl.COLOR_BUFFER_BIT);
@@ -116,17 +124,20 @@ void main()
         this.shader.uniforms.uTEXTURE.set(0);
 
         this.vertexArray.bind();
+
+        // clear layers
+        for (const layer of Object.keys(this.commandBuffer)) {
+            this.commandBuffer[Number(layer)] = [];
+        }
     }
 
     /**
-     * Draw a sprite
-     * @param texture 
-     * @param position 
+     * Submit a render command
      * @param rotation in radians
-     * @param scale 
      */
     draw(
         texture: Texture,
+        layer: number,
         uvMin: Vector2 = [0, 0], uvMax: Vector2 = [1, 1],
         position: Vector2 = [0, 0], rotation: number = 0, scale: Vector2 = [1, 1]
     ) {
@@ -134,18 +145,39 @@ void main()
         m3.translate(model, position);
         m3.rotate(model, rotation);
         m3.scale(model, scale);
-        this.shader.uniforms.uMODEL.set(model);
 
-        texture.bind(0);
-        this.shader.uniforms.uUV.set([uvMin[0], uvMin[1], uvMax[0], uvMax[1]]);
+        const cmd: RenderCommand = {
+            texture,
+            uv: [uvMin[0], uvMin[1], uvMax[0], uvMax[1]],
+            model: model
+        };
 
-        this.gl.drawElements(/* TRIANGLES */ 0x0004, 6, /* UNSIGNED_INT */ 0x1405, 0);
+        if (!this.commandBuffer[layer]) {
+            this.commandBuffer[layer] = [cmd];
+        } else {
+            this.commandBuffer[layer].push(cmd);
+        }
     }
 
     /**
-     * End the scene
+     * Flush command buffer
      */
     end() {
-        // Not sure if there's even a reason for this to exist
+        const layers = Object.keys(this.commandBuffer).sort((a, b) => +a - +b);
+        for (let i = 0, len = layers.length; i < len; ++i) {
+            // for each layer...
+            const cmdList = this.commandBuffer[+layers[i]];
+            for (let j = 0, len = cmdList.length; j < len; ++j) {
+                // for each command...
+                this.execute(cmdList[j]);
+            }
+        }
+    }
+
+    private execute(cmd: RenderCommand) {
+        cmd.texture.bind(0);
+        this.shader.uniforms.uUV.set(cmd.uv);
+        this.shader.uniforms.uMODEL.set(cmd.model);
+        this.gl.drawElements(/* TRIANGLES */ 0x0004, 6, /* UNSIGNED_INT */ 0x1405, 0);
     }
 }
