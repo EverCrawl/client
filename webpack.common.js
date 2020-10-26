@@ -1,5 +1,6 @@
 const path = require("path");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
+const CopyPlugin = require("copy-webpack-plugin");
 
 module.exports = {
     entry: "./src/index.tsx",
@@ -20,10 +21,22 @@ module.exports = {
             },
         ],
     },
-    plugins: [new HtmlWebpackPlugin({
-        hash: true,
-        template: "src/index.html"
-    })],
+    plugins: [
+        new CopyPlugin({
+            patterns: [
+                { 
+                    from: 'assets', to: 'assets',
+                    globOptions: {
+                        ignore: ["**/.git", "**/*.md", "**/.gitkeep", "**/*.sh", "**/*.bat"]
+                    }
+                }
+            ],
+        }),
+        new HtmlWebpackPlugin({
+            hash: true,
+            template: "src/index.html"
+        })
+    ],
     resolve: {
         extensions: [".ts", ".js", ".tsx", ".jsx"],
         modules: [path.resolve("./src"), path.resolve("./node_modules")],

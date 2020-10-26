@@ -1,9 +1,7 @@
 import { h, Component, createRef } from "preact";
 import * as Core from "core";
 import "./Game.css";
-import AYAYA from "./img/icon_128x128.png";
 
-// TODO: hook up https://github.com/jprochazk/underworld-assets.git as submodule, pull on build/dev
 // TODO: sprite (only holds texture and animation info)
 // TODO: load + render sprites/animations from aseprite
 // TODO: load + render maps from Tiled
@@ -27,7 +25,7 @@ export default class Game extends Component {
 
         const renderer = new Core.Renderer(this.gl);
 
-        const texture = new Core.Texture(this.gl, AYAYA);
+        const texture = new Core.Texture(this.gl, "assets/img/AYAYA.png");
 
         let scale = [200, 200] as [number, number];
         let rot = 15;
