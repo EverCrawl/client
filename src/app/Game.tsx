@@ -26,7 +26,6 @@ export default class Game extends Component {
 
         const renderer = new Core.Renderer(this.gl);
 
-        //const texture = new Core.Texture(this.gl, "assets/img/AYAYA.png");
         const sprite = new Core.Sprite(spritesheet);
 
         let rot = 0;
@@ -41,13 +40,23 @@ export default class Game extends Component {
             keys[evt.code] = false;
         })
 
+        let vel = v2();
+        let g = 0.09;
+
         const loop = () => {
-            let vel = v2();
-            if (keys["KeyW"]) vel[1] += 1;
-            if (keys["KeyS"]) vel[1] -= 1;
-            if (keys["KeyA"]) vel[0] += 1;
-            if (keys["KeyD"]) vel[0] -= 1;
+            vel[1] -= g;
+            vel[0] = 0;
+            //if (keys["KeyW"]) vel[1] += 1;
+            //if (keys["KeyS"]) vel[1] -= 1;
+            if (keys["KeyA"]) vel[0] -= 1;
+            if (keys["KeyD"]) vel[0] += 1;
+            if (keys["Space"]) vel[1] = 1;
             v2.add(pos, vel);
+
+            if (pos[0] > this.gl.canvas.width - 50) pos[0] = this.gl.canvas.width - 50;
+            if (pos[0] < 50) pos[0] = 50;
+            if (pos[1] > this.gl.canvas.height - 50) pos[1] = this.gl.canvas.height - 50;
+            if (pos[1] < 50) pos[1] = 50;
             //rot = (rot + 0.5) % 360;
             //if (pos[0] > 1000 || pos[0] < 500) {
             //    vel[0] *= -1;
