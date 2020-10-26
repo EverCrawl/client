@@ -4,6 +4,7 @@
     "author": "Jan Procházka",
     "license": "MIT",
     "scripts": {
+        "preinstall": "git submodule init && git submodule update",
         "update-assets": "cd assets && git fetch --all && git pull",
         "build": "npm run update-assets && webpack --config webpack.prod.js",
         "dev": "npm run update-assets && webpack serve --config webpack.dev.js",
