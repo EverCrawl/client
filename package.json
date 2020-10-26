@@ -5,7 +5,7 @@
     "license": "MIT",
     "scripts": {
         "preinstall": "git submodule init && git submodule update",
-        "update-assets": "cd assets && git fetch --all && git pull",
+        "update-assets": "cd assets && git fetch --all && git pull origin master",
         "build": "npm run update-assets && webpack --config webpack.prod.js",
         "dev": "npm run update-assets && webpack serve --config webpack.dev.js",
         "test": "jest"
