@@ -13,9 +13,9 @@ export interface m3 {
         m20?: number, m21?: number, m22?: number,
     ): Matrix3;
     clone(matrix: Matrix3): Matrix3;
-    /* transpose(matrix: Matrix3): Matrix3;
     invert(matrix: Matrix3): Matrix3;
-    adjoint(matrix: Matrix3): Matrix3;
+    /* adjoint(matrix: Matrix3): Matrix3;
+    transpose(matrix: Matrix3): Matrix3;
     determinant(matrix: Matrix3): Matrix3;
     mult(matrix: Matrix3): Matrix3; */
     translate(matrix: Matrix3, value: Vector2): Matrix3;
@@ -25,6 +25,38 @@ export interface m3 {
     add(matrix: Matrix3): Matrix3;
     sub(matrix: Matrix3): Matrix3;
     multScalar(matrix: Matrix3): Matrix3; */
+}
+m3.invert = function (matrix: Matrix3): Matrix3 {
+    const a00 = matrix[0],
+        a01 = matrix[1],
+        a02 = matrix[2];
+    const a10 = matrix[3],
+        a11 = matrix[4],
+        a12 = matrix[5];
+    const a20 = matrix[6],
+        a21 = matrix[7],
+        a22 = matrix[8];
+    const b01 = a22 * a11 - a12 * a21;
+    const b11 = -a22 * a10 + a12 * a20;
+    const b21 = a21 * a10 - a11 * a20;
+
+    let det = a00 * b01 + a01 * b11 + a02 * b21;
+
+    if (!det) {
+        return m3();
+    }
+
+    det = 1.0 / det;
+    matrix[0] = b01 * det;
+    matrix[1] = (-a22 * a01 + a02 * a21) * det;
+    matrix[2] = (a12 * a01 - a02 * a11) * det;
+    matrix[3] = b11 * det;
+    matrix[4] = (a22 * a00 - a02 * a20) * det;
+    matrix[5] = (-a12 * a00 + a02 * a10) * det;
+    matrix[6] = b21 * det;
+    matrix[7] = (-a21 * a00 + a01 * a20) * det;
+    matrix[8] = (a11 * a00 - a01 * a10) * det;
+    return matrix;
 }
 export function m3(
     m00 = 1, m01 = 0, m02 = 0,

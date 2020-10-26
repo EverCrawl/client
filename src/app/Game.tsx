@@ -1,8 +1,8 @@
 import { h, Component, createRef } from "preact";
 import * as Core from "core";
 import "./Game.css";
+import { v2 } from "core";
 
-// TODO: load + render sprites/animations from aseprite
 // TODO: collisions
 // TODO: load + render maps from Tiled
 // TODO: net connection
@@ -31,9 +31,23 @@ export default class Game extends Component {
 
         let rot = 0;
         let pos = [500, 500] as [number, number];
-        let vel = [1, 0];
+
+        let keys: { [x: string]: boolean } = {};
+
+        window.addEventListener("keydown", (evt) => {
+            keys[evt.code] = true;
+        });
+        window.addEventListener("keyup", (evt) => {
+            keys[evt.code] = false;
+        })
 
         const loop = () => {
+            let vel = v2();
+            if (keys["KeyW"]) vel[1] += 1;
+            if (keys["KeyS"]) vel[1] -= 1;
+            if (keys["KeyA"]) vel[0] += 1;
+            if (keys["KeyD"]) vel[0] -= 1;
+            v2.add(pos, vel);
             //rot = (rot + 0.5) % 360;
             //if (pos[0] > 1000 || pos[0] < 500) {
             //    vel[0] *= -1;

@@ -19,6 +19,7 @@ export interface v2 {
     dist2(a: Vector2, b: Vector2): number;
     len(vec: Vector2): number;
     len2(vec: Vector2): number;
+    clamp(a: Vector2, b: Vector2): Vector2;
     negate(vec: Vector2): Vector2;
     inverse(vec: Vector2): Vector2;
     norm(vec: Vector2): Vector2;
@@ -132,10 +133,25 @@ v2.lerp = function (a: Vector2, b: Vector2, t: number): Vector2 {
         a[1] + t * (b[1] - a[1])
     ];
 }
-v2.multMat2 = function (vec: Vector2, mat: Matrix3): Vector2 {
+v2.multMat3 = function (vec: Vector2, mat: Matrix3): Vector2 {
     vec[0] = mat[0] * vec[0] + mat[3] * vec[1] + mat[6];
     vec[0] = mat[1] * vec[0] + mat[4] * vec[1] + mat[7];
     return vec;
+}
+v2.minc = function (a: Vector2, b: Vector2): Vector2 {
+    return [
+        Math.min(a[0], b[0]),
+        Math.min(a[1], b[1])
+    ];
+}
+v2.maxc = function (a: Vector2, b: Vector2): Vector2 {
+    return [
+        Math.max(a[0], b[0]),
+        Math.max(a[1], b[1])
+    ];
+}
+v2.clampc = function (vec: Vector2, min: Vector2, max: Vector2): Vector2 {
+    return v2.minc(v2.maxc(vec, [min[0], min[1]]), [max[0], max[1]]);
 }
 v2.rotate = function (vec: Vector2, o: Vector2, rad: number): Vector2 {
     let p0 = vec[0] - o[0],
@@ -145,6 +161,9 @@ v2.rotate = function (vec: Vector2, o: Vector2, rad: number): Vector2 {
     vec[0] = p0 * cosC - p1 * sinC + o[0];
     vec[1] = p0 * sinC + p1 * cosC + o[1];
     return vec;
+}
+v2.perp = function (vec: Vector2): Vector2 {
+    return [vec[1], -vec[0]];
 }
 v2.angle = function (a: Vector2, b: Vector2): number {
     let mag = Math.sqrt(a[0] * a[0] + a[1] * a[1]) * Math.sqrt(b[0] * b[0] + b[1] * b[1]),
