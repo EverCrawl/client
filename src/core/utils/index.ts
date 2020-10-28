@@ -14,3 +14,7 @@ export type Mutable<T> = { -readonly [K in keyof T]: T[K] };
 export type InstanceTypeTuple<T extends any[]> = {
     [K in keyof T]: T[K] extends Constructor<infer U> ? U : never;
 };
+
+export type Friend<T, Expose> = {
+    [K in keyof T]: K extends keyof Expose ? never : T[K];
+} & Expose;

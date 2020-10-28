@@ -5,6 +5,7 @@ declare global {
         front(): T;
         back(): T;
         swap(a: number, b: number): void;
+        empty(): boolean;
     }
 }
 
@@ -35,6 +36,11 @@ if (undefined === Array.prototype.swap) {
         const temp = this[a];
         this[a] = this[b];
         this[b] = temp;
+    }
+}
+if (undefined === Array.prototype.empty) {
+    window.Array.prototype.empty = function <T>(this: Array<T>): boolean {
+        return this.length === 0;
     }
 }
 

@@ -1,9 +1,10 @@
 import { h, Component, createRef } from "preact";
 import * as Core from "core";
 import "./Game.css";
-import { v2 } from "core";
+import { v2, Vector2 } from "core";
 
-// TODO: collisions
+// TODO: animations
+// TODO: better main loop
 // TODO: load + render maps from Tiled
 // TODO: net connection
 
@@ -29,7 +30,8 @@ export default class Game extends Component {
         const sprite = new Core.Sprite(spritesheet);
 
         let rot = 0;
-        let pos = [500, 500] as [number, number];
+        let lastPos = [500, 500] as Vector2;
+        let pos = [500, 500] as Vector2;
 
         let keys: { [x: string]: boolean } = {};
 
@@ -43,28 +45,55 @@ export default class Game extends Component {
         let vel = v2();
         let g = 0.09;
 
+        let orientation = 1;
+
         const loop = () => {
             vel[1] -= g;
             vel[0] = 0;
-            //if (keys["KeyW"]) vel[1] += 1;
-            //if (keys["KeyS"]) vel[1] -= 1;
-            if (keys["KeyA"]) vel[0] -= 1;
-            if (keys["KeyD"]) vel[0] += 1;
-            if (keys["Space"]) vel[1] = 1;
+
+            if (keys["KeyA"]) {
+                vel[0] -= 2; orientation = -1;
+                // can only go to "move" when in "idle"
+                if (sprite.animation === "Idle") {
+                    // move has no transition
+                    sprite.animate("Move", true);
+                }
+            }
+            if (keys["KeyD"]) {
+                vel[0] += 2; orientation = 1;
+                // can only go to "move" when in "idle"
+                if (sprite.animation === "Idle") {
+                    // move has no transition
+                    sprite.animate("Move", true);
+                }
+            }
+            if (keys["Space"]) {
+                if (sprite.animation !== "Jump") {
+                    vel[1] = 5;
+                    // jump has a transition
+                    sprite.animate("Jump", false);
+                }
+            }
+            lastPos = v2.clone(pos);
             v2.add(pos, vel);
+
+            if (vel[0] === 0 && sprite.animation === "Move") {
+                sprite.animate("Idle", true);
+            }
 
             if (pos[0] > this.gl.canvas.width - 50) pos[0] = this.gl.canvas.width - 50;
             if (pos[0] < 50) pos[0] = 50;
             if (pos[1] > this.gl.canvas.height - 50) pos[1] = this.gl.canvas.height - 50;
-            if (pos[1] < 50) pos[1] = 50;
-            //rot = (rot + 0.5) % 360;
-            //if (pos[0] > 1000 || pos[0] < 500) {
-            //    vel[0] *= -1;
-            //}
-            //pos[0] += vel[0];
+            if (pos[1] < 50) {
+                // landing
+                if (sprite.animation === "Jump") {
+                    sprite.animate("Idle", false);
+                }
+                pos[1] = 50;
+            }
 
             renderer.begin(camera);
-            sprite.draw(renderer, 0, pos, Math.rad(rot), [2, 2]);
+            sprite.draw(renderer, 0, pos, Math.rad(rot), [orientation, 1]);
             renderer.end();
 
             requestAnimationFrame(loop);
