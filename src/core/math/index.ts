@@ -1,4 +1,5 @@
 
+export * from "./Collision";
 export * from "./Common";
 export * from "./Matrix3";
 export * from "./Matrix4";

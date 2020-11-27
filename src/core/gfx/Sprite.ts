@@ -1,49 +1,86 @@
 import { Vector2 } from "core/math";
-import { Renderer } from "./Renderer";
-import { Texture } from "./Texture";
+import { SpriteRenderer } from "./Renderer";
+import { Texture, TextureKind } from "./Texture";
 import { Friend } from "core/utils";
 
-interface AnimationData {
-    [name: string]: {
-        frames: Array<{
-            delay: number;
-        }>;
-        duration: number;
-    }
+/**
+ * Available animations
+ */
+export type Animations =
+    | "Idle_Down"
+    | "Idle_DownLeft"
+    | "Idle_DownRight"
+    | "Idle_Left"
+    | "Idle_Right"
+    | "Idle_Up"
+    | "Idle_UpLeft"
+    | "Idle_UpRight"
+    | "Walk_Down"
+    | "Walk_DownLeft"
+    | "Walk_DownRight"
+    | "Walk_Left"
+    | "Walk_Right"
+    | "Walk_Up"
+    | "Walk_UpLeft"
+    | "Walk_UpRight"
+
+/*
+TO ADD A NEW ANIMATION:
+
+1. Add its name to `type Animations` for auto-suggestion
+2. Add its transitions from/to other animations (if applicable)
+3. Add a trigger for it somewhere (sprite.state = <ANIMATION_NAME>) 
+
+Please note that "Animation" and "State" are treated as the same thing
+So it's valid to check if an animation has finished.
+
+TODO(?): add callbacks for animation start/end
+*/
+
+interface Size {
+    w: number, h: number;
 }
 
-interface SpriteData {
-    [layer: string]: {
-        [name: string]: {
-            frames: Array<{
-                uv: { x: number, y: number, w: number, h: number };
-                size: { w: number, h: number };
-                delay: number;
-            }>;
-            direction: string;
-        }
-    }
+interface UV {
+    x: number, y: number, w: number, h: number
 }
 
-interface SpriteJSON {
-    animations: AnimationData;
-    sprites: SpriteData;
-    spritesheet: string;
-    meta: {
-        app: string;
-        origin: string;
-        version: string;
-    }
+interface Frame {
+    uv: UV;
+    size: Size;
+    delay: number;
+}
+
+interface Animation {
+    frames: Frame[];
+    direction: string;
+}
+
+interface Layer {
+    [name: string]: Animation
+}
+
+interface FrameDesc {
+    delay: number;
+}
+
+interface AnimationDesc {
+    frames: FrameDesc[];
+    duration: number;
 }
 
 // Transitions are hardcoded.
 const transitions: { [nodeA: string]: { [nodeB: string]: /* edge */ string } } = {
-    "Idle": {
+    /* "Idle": {
         "Jump": "JumpStart"
-    },
-    "Jump": {
-        "Idle": "JumpEnd"
-    }
+    }, */
+    /* "Jump": {
+        "Idle": "JumpEnd",
+        "Move": "JumpEnd"
+    }, */
+    /* "Move": {
+        "Jump": "JumpStart"
+    } */
 };
 
 class AnimationState<T extends string> {
@@ -54,7 +91,7 @@ class AnimationState<T extends string> {
     transitioned = true;
 
     constructor(
-        public animations: AnimationData,
+        public animations: { [name: string]: AnimationDesc },
         public defaultState: T,
         public sprite: Sprite_Friend
     ) {
@@ -63,10 +100,10 @@ class AnimationState<T extends string> {
         this.sprite.setAnimation(defaultState);
     }
 
-    set(name: T, transition: boolean) {
+    set(name: T) {
         this.lastState = this.state;
         this.state = name;
-        this.transitioned = transition;
+        this.transitioned = transitions[this.lastState]?.[name] === undefined;
     }
 
     get() {
@@ -82,7 +119,9 @@ class AnimationState<T extends string> {
                     this.sprite.setAnimation(transition);
                     this.transitionStart = Date.now();
                 }
-                if (Date.now() + 50 - this.transitionStart >= (transitionInfo!.duration)) {
+                // magic constant - skip about one update, otherwise animation repeats which we don't want
+                // TODO: do this in a more robust way by setting a flag to prevent this animation from repeating
+                if (Date.now() + 16 - this.transitionStart >= (transitionInfo!.duration)) {
                     // transition ended, next frame we will switch to idle anim
                     this.transitioned = true;
                 }
@@ -99,15 +138,13 @@ type Sprite_Friend = Friend<Sprite, {
     setAnimation(value: string): void;
 }>;
 
-export type Animations = "Jump" | "Move" | "Idle";
-
 export class Sprite {
     private spritesheet: Spritesheet_Friend;
 
     private animation_: string;
     private frameIndex: number;
     private lastAnimationStep: number;
-    private animationState: AnimationState<"Jump" | "Move" | "Idle"> | null;
+    private animationState: AnimationState<Animations> | null;
 
     constructor(
         spritesheet: Spritesheet,
@@ -119,7 +156,7 @@ export class Sprite {
         this.animationState = null;
     }
 
-    get animations(): AnimationData | null {
+    get animations(): { [name: string]: AnimationDesc } | null {
         return this.spritesheet.animations;
     }
 
@@ -133,19 +170,31 @@ export class Sprite {
         this.lastAnimationStep = Date.now();
     }
 
-    animate(name: Animations, transition: boolean) {
-        this.animationState?.set(name, transition);
+    animate(name: Animations) {
+        this.animationState?.set(name);
+    }
+
+    set animation(value: Animations | undefined) {
+        this.animationState?.set(value ?? "Idle_Down");
     }
 
     get animation() {
         return this.animationState?.get();
     }
 
-    draw(renderer: Renderer, layer: number, pos: Vector2, rot: number, scale: Vector2) {
+    get width() {
+        return (this.spritesheet.maxSize?.w ?? 0) / 2;
+    }
+
+    get height() {
+        return (this.spritesheet.maxSize?.h ?? 0) / 2;
+    }
+
+    draw(renderer: SpriteRenderer, layer: number, pos: Vector2 = [0, 0], rot: number = 0, scale: Vector2 = [1, 1]) {
         if (!this.spritesheet.loaded_) return;
 
         if (!this.animationState) {
-            this.animationState = new AnimationState(this.spritesheet.animations!, "Idle", this as unknown as Sprite_Friend);
+            this.animationState = new AnimationState(this.spritesheet.animations!, "Idle_Down", this as unknown as Sprite_Friend);
         }
         this.animationState.update();
 
@@ -158,8 +207,8 @@ export class Sprite {
             this.frameIndex = (this.frameIndex + 1) % anim.frames.length;
         }
 
-        for (const spriteLayer of Object.keys(this.spritesheet.sprites!)) {
-            const anim = this.spritesheet.sprites![spriteLayer][this.animation_];
+        for (const spriteLayer of Object.keys(this.spritesheet.layers!)) {
+            const anim = this.spritesheet.layers![spriteLayer][this.animation_];
             if (!anim) continue;
 
             const uv = anim.frames[this.frameIndex].uv;
@@ -175,11 +224,12 @@ interface Spritesheet_Friend {
     readonly gl: WebGL2RenderingContext;
     readonly path: string
     loaded_: boolean;
-    animations: AnimationData | null;
-    sprites: SpriteData | null;
+    animations: { [name: string]: AnimationDesc } | null;
+    layers: { [name: string]: Layer } | null;
     texture: Texture | null;
+    maxSize: Size | null;
     readonly ready: boolean;
-    load(json: SpriteJSON): void;
+    load(json: any): void;
 }
 
 export class Spritesheet {
@@ -187,9 +237,10 @@ export class Spritesheet {
     public readonly path: string
     private loaded_: boolean;
 
-    private animations: AnimationData | null = null;
-    private sprites: SpriteData | null = null;
+    private animations: { [name: string]: AnimationDesc } | null = null;
+    private layers: { [name: string]: Layer } | null = null;
     private texture: Texture | null = null;
+    private maxSize: Size | null = null;
 
     constructor(
         gl: WebGL2RenderingContext,
@@ -208,13 +259,84 @@ export class Spritesheet {
         return this.loaded_;
     }
 
-    private load(json: SpriteJSON) {
-        this.animations = json.animations;
-        this.sprites = json.sprites;
-        this.texture = new Texture(this.gl, json.spritesheet);
+    private load(json: any) {
+        const transformed = transform_sprite_data(json, this.path.substr(0, this.path.lastIndexOf("/")));
+        this.animations = transformed.animations;
+        this.layers = transformed.layers;
+        this.texture = Texture.create(this.gl, TextureKind.Image2D, { path: transformed.spritesheet, mipmap: false });
+        this.maxSize = transformed.maxSize;
 
         console.log(this);
 
         this.loaded_ = true;
     }
+}
+
+function transform_sprite_data(json: any, dir: string): any {
+    let animations: { [name: string]: any } = {};
+    let layers: { [name: string]: any } = {};
+    let maxSize = { w: 0, h: 0 };
+
+    const jmeta = json["meta"]
+    const jmeta_w = jmeta["size"]["w"];
+    const jmeta_h = jmeta["size"]["h"];
+    const frameTags = jmeta["frameTags"];
+
+    for (const layer of jmeta["layers"]) {
+        layers[layer["name"]] = {};
+        let n = 0;
+        nextAnimation: while (n < frameTags.length) {
+            const animation = frameTags[n];
+            const animationName = animation["name"];
+            const length = parseInt(animation["to"]) - parseInt(animation["from"]) + 1;
+            let totalDuration = 0.0;
+            let frames: any[] = [];
+            for (let i = 0; i < length; ++i) {
+                const frameName = `${layer["name"]} ${animationName} ${i}`;
+                if (!json["frames"][frameName]) continue nextAnimation;
+
+                const raw_frame = json["frames"][frameName];
+                const info = raw_frame["frame"];
+                const fx = parseFloat(info["x"]);
+                const fy = parseFloat(info["y"]);
+                const fw = parseFloat(info["w"]);
+                const fh = parseFloat(info["h"]);
+
+                const duration = parseFloat(raw_frame["duration"]);
+                totalDuration += duration;
+                if (maxSize.w < fw * 2) maxSize.w = fw * 2;
+                if (maxSize.h < fh * 2) maxSize.h = fh * 2;
+
+                const uv = {
+                    x: fx / jmeta_w,
+                    y: fy / jmeta_h,
+                    w: fw / jmeta_w,
+                    h: fh / jmeta_h
+                };
+                const size = { w: fw, h: fh };
+                frames.push({
+                    uv: uv,
+                    size: size,
+                    delay: duration
+                });
+            }
+            animations[animationName] = {
+                frames: frames.map((f: any): any => ({ delay: f.delay })),
+                duration: totalDuration
+            };
+            layers[layer["name"]][animationName] = {
+                frames: frames,
+                duration: totalDuration
+            };
+            n += 1;
+        }
+    }
+
+    let spritesheet = dir + "/" + jmeta["image"];
+    return {
+        animations: animations,
+        layers: layers,
+        spritesheet: spritesheet,
+        maxSize: maxSize
+    };
 }

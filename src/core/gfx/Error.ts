@@ -42,7 +42,7 @@ export function stringifyErrorKind(code: ErrorKind, extra?: any) {
         case ErrorKind.UnknownBaseType:
             return `Unknown base type: ${extra.type}`;
         case ErrorKind.ShaderCompileFailure:
-            return `Failed to compile program from sources:\nVertex: \n${extra.vertex}\nFragment: \n${extra.fragment}\nErrors:\n${extra.errors}`;
+            return `[${extra.type && extra.type === 0x8B31 ? "VERTEX" : "FRAGMENT"} SHADER] Failed to compile:\n${extra.message}`;
         case ErrorKind.CreateFailure:
             return `Failed to create ${extra.what}: ${extra.why}`;
         case ErrorKind.ContextAcquireFailure:
@@ -54,7 +54,7 @@ export function stringifyErrorKind(code: ErrorKind, extra?: any) {
         case ErrorKind.UnknownArrayType:
             return `Unknown array type: ${extra.type}`;
         case ErrorKind.Unsupported:
-            return `${extra.what} ${extra.plural ? "are" : "is"} unsupported.`;
+            return `${extra.what} ${extra.plural === true ? "are" : "is"} unsupported. ${extra.info}`;
     }
 }
 

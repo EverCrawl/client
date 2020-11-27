@@ -50,7 +50,7 @@ export class VertexArray {
 
     constructor(
         gl: WebGL2RenderingContext,
-        buffers: { buffer: Buffer, descriptors: BufferDescriptor[] }[]
+        private buffers: { buffer: Buffer, descriptors: BufferDescriptor[] }[]
     ) {
         this.gl = gl;
         this.handle = createVertexArray(this.gl);

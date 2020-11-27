@@ -2,6 +2,10 @@
 declare global {
     interface Math {
         EPSILON: number;
+        /**
+         * Epsilon rounded up to the nearest power of two.
+         */
+        EPSILONP2: number;
         rad(angle: number): number;
         deg(angle: number): number;
         clamp(num: number, min: number, max: number): number;
@@ -20,6 +24,10 @@ declare global {
          * Inverse square root.
          */
         rsqrt(n: number): number;
+        /**
+         * Round number up to the nearest power of 2.
+         */
+        ceil2(n: number): number;
     }
 }
 
@@ -39,5 +47,6 @@ window["Math"]["fhypot"] = (...n) => {
     return Math.sqrt(sum);
 }
 window["Math"]["rsqrt"] = (n) => 1 / Math.sqrt(n);
+window["Math"]["ceil2"] = (n) => Math.pow(2, Math.ceil(Math.log(n) / Math.log(2)));
 
 export { };
