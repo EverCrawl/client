@@ -82,7 +82,7 @@ export class TileMap {
         })();
     }
 
-    draw(renderer: TileRenderer) {
+    draw(renderer: TileRenderer, position = v2(), rotation = 0, scale = v2(1, 1)) {
         const half_tilesize = this.tilesize / 2;
         for (let row = 0; row < this.rows; ++row) {
             for (let column = 0; column < this.columns; ++column) {
@@ -90,9 +90,9 @@ export class TileMap {
                 const atlas = this.tilesets[tsid(tile)];
                 renderer.draw(atlas, -1,
                     tid(tile),
-                    v2(half_tilesize + column * this.tilesize, half_tilesize + row * this.tilesize),
-                    0,
-                    v2(half_tilesize, half_tilesize));
+                    v2(position[0] + half_tilesize + column * this.tilesize, position[1] + half_tilesize + row * this.tilesize),
+                    rotation,
+                    v2(scale[0] * half_tilesize, scale[1] * half_tilesize));
             }
         }
     }

@@ -5,14 +5,13 @@ export function start(
     render: (t: number) => void,
     MS_PER_UPDATE: number
 ) {
-    let previous = Date.now();
+    let last = window.performance.now();
     let lag = 0.0;
-    const loop = () => {
-        let current = Date.now();
-        let elapsed = current - previous;
-        previous = current;
-        lag += elapsed;
+    const loop = (now: number) => {
+        let dt = now - last;
+        last = now;
 
+        lag += dt;
         while (lag >= MS_PER_UPDATE) {
             update();
             lag -= MS_PER_UPDATE;

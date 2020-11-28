@@ -141,28 +141,32 @@ export class Game {
                 }
                 lastAnim = anim;
 
-                pos[0] += vel[0];
-                pos[1] += vel[1];
+                lastPos = v2.clone(pos);
+                pos[0] -= vel[0];
+                pos[1] -= vel[1];
             },
             (t) => {
                 // interpolate positions
-                let actualPos = v2.clone(pos);
-                if (!v2.exactEquals(pos, lastPos)) v2.add(actualPos, v2.scale(v2.clone(vel), t));
+                /* let actualPos = v2.clone(pos);
+                if (!v2.exactEquals(pos, lastPos)) {
+                    actualPos[0] += vel[0] * t;
+                    actualPos[1] += vel[1] * t;
+                } */
 
                 // camera follows player
-                this.camera.position = v2(
+                /* this.camera.position = v2(
                     actualPos[0] - this.viewport.width / 2,
                     actualPos[1] - this.viewport.height / 2
-                );
+                ); */
 
                 this.gl.clear(this.gl.COLOR_BUFFER_BIT);
 
                 this.tileRenderer.begin(this.camera);
-                tilemap.draw(this.tileRenderer);
+                tilemap.draw(this.tileRenderer, pos);
                 this.tileRenderer.end();
 
                 this.spriteRenderer.begin(this.camera);
-                sprite.draw(this.spriteRenderer, 0, actualPos, Math.rad(rot), [1, 1]);
+                sprite.draw(this.spriteRenderer, 0, [this.viewport.width / 2, this.viewport.height / 2], Math.rad(rot), [1, 1]);
                 this.spriteRenderer.end();
             },
             1000 / 60
