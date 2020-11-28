@@ -4,8 +4,11 @@ This repository hosts the game client for an online browser-based platformer.
 
 ### Prerequisites
 
-* Node 12+
-* yarn 1.22+
+* [Node](https://nodejs.org/en/) 12+
+* [Yarn](https://yarnpkg.com/)
+  * `npm install -g yarn`
+* WebGL2 compatible browser
+  * You can check if your browser supports it [here](https://webglreport.com/?v=2)
 
 ### Build
 
@@ -17,6 +20,8 @@ $ cd underworld-client
 $ yarn && yarn dev
 ```
 
+The client will be served to [`http://localhost:8080/`](http://localhost:8080/).
+
 ### Controls
 
-WASD to move
+Just WASD to move. Currently lacks most planned gameplay features.
