@@ -9,24 +9,14 @@ This repository hosts the game client for an online browser-based platformer.
 
 ### Build
 
-```
-$ yarn build
-```
-
-Outputs the built files into the `dist` directory.
-
-### Development server
+Assets are held in a submodule, so the repository should be cloned recursively.
 
 ```
-$ yarn dev
+$ git clone --recurse-submodules git://github.com/jprochazk/underworld-client.git
+$ cd underworld-client
+$ yarn && yarn dev
 ```
 
-Serves the client on `http://localhost:8080/`.
+### Controls
 
-### Tests
-
-Tests are written using [Jest](https://jestjs.io/).
-
-```
-$ yarn test
-```
+WASD to move
