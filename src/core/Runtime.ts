@@ -3,7 +3,7 @@ let raf: number;
 export function start(
     update: () => void,
     render: (t: number) => void,
-    MS_PER_UPDATE: number
+    TARGET_UPDATE_MS: number
 ) {
     let last = window.performance.now();
     let lag = 0.0;
@@ -12,12 +12,12 @@ export function start(
         last = now;
 
         lag += dt;
-        while (lag >= MS_PER_UPDATE) {
+        while (lag >= TARGET_UPDATE_MS) {
             update();
-            lag -= MS_PER_UPDATE;
+            lag -= TARGET_UPDATE_MS;
         }
 
-        render(lag / MS_PER_UPDATE);
+        render(lag / TARGET_UPDATE_MS);
         raf = window.requestAnimationFrame(loop);
     }
     raf = window.requestAnimationFrame(loop);

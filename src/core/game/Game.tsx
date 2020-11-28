@@ -17,43 +17,40 @@ import { v2, Vector2, Matrix3, m3 } from "core";
 // TODO: unify renderer architecture
 // TODO: unify texture sampling
 
-/* class StateBuffer<T> {
-    private sbuffer: Array<T>;
-    private lastUpdate: number;
+/**
+ * Lightweight state wrapper. Provides an abstraction
+ * for interpolating between states.
+ */
+class State<T> {
+    private current_: T;
+    private previous_: T;
 
     constructor(
-        initialState: T,
-        private lerp: (a: T, b: T, weight: number) => T,
-        private size: number = 5
+        initial: T,
+        private lerp: (a: T, b: T, weight: number) => T
     ) {
-        this.sbuffer = [initialState];
-        this.lastUpdate = Date.now();
+        this.current_ = initial;
+        this.previous_ = initial;
     }
 
-    public update(state: T, time: number) {
-        this.lastUpdate = Date.now();
-        // don't add updates where T is lower than or equal to latest T
+    public get current(): T { return this.current_; }
+    public get previous(): T { return this.previous_; }
 
-        // remove anything past size
-        // TODO maybe also maintain a larger buffer
-        // if we aren't receiving enough updates
-        if (this.sbuffer.length + 1 > this.size) {
-            this.sbuffer.shift();
-        }
-
-        this.sbuffer.push(state);
+    public update(value: T): void {
+        this.previous_ = this.current_;
+        this.current_ = value;
     }
 
-    public get(weight: number): T | null {
-        const s0 = this.sbuffer[0];
-        const s1 = this.sbuffer[1];
-        return this.lerp(s0, s1, weight);
+    public get(weight: number): T {
+        return this.lerp(this.previous_, this.current_, weight);
     }
+}
 
-    public last(): T {
-        return this.sbuffer.back();
+class Position extends State<Vector2> {
+    constructor(initial: Vector2) {
+        super(initial, v2.lerp);
     }
-} */
+}
 
 const enum Direction {
     Up = 1 << 1,
@@ -95,8 +92,9 @@ export class Game {
 
         const speed = 2;
         let rot = 0;
-        let lastPos = [16, 16] as Vector2;
-        let pos = [16, 16] as Vector2;
+        let pos = new Position(v2(16, 16));
+        //let lastPos = [16, 16] as Vector2;
+        //let pos = [16, 16] as Vector2;
 
         let keys: { [x: string]: boolean } = {};
 
@@ -141,9 +139,7 @@ export class Game {
                 }
                 lastAnim = anim;
 
-                lastPos = v2.clone(pos);
-                pos[0] -= vel[0];
-                pos[1] -= vel[1];
+                pos.update(v2.sub(pos.current, vel));
             },
             (t) => {
                 // interpolate positions
@@ -153,16 +149,10 @@ export class Game {
                     actualPos[1] += vel[1] * t;
                 } */
 
-                // camera follows player
-                /* this.camera.position = v2(
-                    actualPos[0] - this.viewport.width / 2,
-                    actualPos[1] - this.viewport.height / 2
-                ); */
-
                 this.gl.clear(this.gl.COLOR_BUFFER_BIT);
 
                 this.tileRenderer.begin(this.camera);
-                tilemap.draw(this.tileRenderer, pos);
+                tilemap.draw(this.tileRenderer, pos.get(t));
                 this.tileRenderer.end();
 
                 this.spriteRenderer.begin(this.camera);
