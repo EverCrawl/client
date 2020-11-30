@@ -119,13 +119,13 @@ export class Game {
                 }
                 this.state.lastAnim = anim;
 
-                this.state.pos.update(v2.sub(this.state.pos.current, this.state.vel));
+                this.state.pos.update(v2.add(this.state.pos.current, this.state.vel));
             },
             (t) => {
                 this.gl.clear(this.gl.COLOR_BUFFER_BIT);
 
                 this.tileRenderer.begin(this.camera);
-                this.state.tilemap.draw(this.tileRenderer, this.state.pos.get(t));
+                this.state.tilemap.draw(this.tileRenderer, v2.negate(this.state.pos.get(t)));
                 this.tileRenderer.end();
 
                 this.spriteRenderer.begin(this.camera);
