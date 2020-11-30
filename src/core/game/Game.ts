@@ -1,5 +1,6 @@
 import * as Core from "core";
 import { v2, Vector2, Matrix3, m3 } from "core";
+import { Socket } from "core/net";
 
 // high priority:
 // TODO: (client) net connection
@@ -49,8 +50,9 @@ export class Game {
         lastDirection: number,
         lastAnim: string,
         keys: { [key: string]: boolean },
-
     }
+
+    socket: Socket;
 
     constructor(
         canvas: HTMLCanvasElement
@@ -68,11 +70,14 @@ export class Game {
         this.spriteRenderer = new Core.SpriteRenderer(this.gl);
         this.tileRenderer = new Core.TileRenderer(this.gl);
 
+        this.socket = new Core.Socket("127.0.0.1:8000", "test");
+
         //@ts-ignore temporary
         this.state = {};
 
         //@ts-ignore
         window.Game = this;
+
     }
 
     run() {
@@ -94,16 +99,29 @@ export class Game {
 
         Core.Runtime.start(
             () => {
+                // TODO: refactor this
+
+                // state reset
+                let walk = false;
+                let direction = 0;
                 this.state.vel[0] = 0;
                 this.state.vel[1] = 0;
 
-                let walk = false;
-                let direction = 0;
+                // input check
                 if (this.state.keys["KeyW"]) { this.state.vel[1] += speed; direction |= Direction.Up; walk = true; }
                 if (this.state.keys["KeyS"]) { this.state.vel[1] -= speed; direction |= Direction.Down; walk = true; }
                 if (this.state.keys["KeyA"]) { this.state.vel[0] -= speed; direction |= Direction.Left; walk = true; }
                 if (this.state.keys["KeyD"]) { this.state.vel[0] += speed; direction |= Direction.Right; walk = true; }
 
+                // server packets
+                // TODO: send inputs here
+                if (!this.socket.empty) {
+                    for (const packet of this.socket.readAll()) {
+                        console.log(packet);
+                    }
+                }
+
+                // animation update
                 if (walk && (this.state.lastDirection != direction)) {
                     this.state.lastDirection = direction;
                 }
@@ -119,6 +137,7 @@ export class Game {
                 }
                 this.state.lastAnim = anim;
 
+                // position update
                 if (Math.abs(this.state.vel[0]) === Math.abs(this.state.vel[1])) {
                     this.state.vel[0] /= Math.SQRT2;
                     this.state.vel[1] /= Math.SQRT2;
