@@ -16,7 +16,9 @@ function calcView(eye: m.Vector3, center: m.Vector3, worldUp: m.Vector3): m.Matr
 }
 
 function calcProjection(viewport: Viewport, near: number, far: number, zoom: number): m.Matrix4 {
-    return m.m4.orthographic(0, viewport.width/*  / zoom */, viewport.height/*  / zoom */, 0, near, far);
+    const hw = viewport.width / 2;
+    const hh = viewport.height / 2;
+    return m.m4.orthographic(-hw, hw, hh, -hh, near, far);
 }
 
 export class Camera {
