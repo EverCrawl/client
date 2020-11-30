@@ -119,6 +119,10 @@ export class Game {
                 }
                 this.state.lastAnim = anim;
 
+                if (Math.abs(this.state.vel[0]) === Math.abs(this.state.vel[1])) {
+                    this.state.vel[0] /= Math.SQRT2;
+                    this.state.vel[1] /= Math.SQRT2;
+                }
                 this.state.pos.update(v2.add(this.state.pos.current, this.state.vel));
             },
             (t) => {
