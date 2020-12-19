@@ -215,7 +215,7 @@ export class Sprite {
             const size = anim.frames[this.frameIndex].size;
             renderer.draw(this.spritesheet.texture!, layer,
                 [uv.x, uv.y], [uv.w, uv.h],
-                pos, rot, [size.w * scale[0], size.h * scale[1]]);
+                [pos[0], pos[1] - size.h / 2], rot, [size.w * scale[0], size.h * scale[1]]);
         }
     }
 }
@@ -260,7 +260,7 @@ export class Spritesheet {
     }
 
     private load(json: any) {
-        const transformed = transform_sprite_data(json, this.path.substr(0, this.path.lastIndexOf("/")));
+        const transformed = parseSpriteData(json, this.path.substr(0, this.path.lastIndexOf("/")));
         this.animations = transformed.animations;
         this.layers = transformed.layers;
         this.texture = Texture.create(this.gl, TextureKind.Image2D, { path: transformed.spritesheet, mipmap: false });
@@ -272,7 +272,7 @@ export class Spritesheet {
     }
 }
 
-function transform_sprite_data(json: any, dir: string): any {
+function parseSpriteData(json: any, dir: string): any {
     let animations: { [name: string]: any } = {};
     let layers: { [name: string]: any } = {};
     let maxSize = { w: 0, h: 0 };

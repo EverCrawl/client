@@ -11,6 +11,7 @@ export interface v2 {
     div(a: Vector2, b: Vector2): Vector2;
     min(a: Vector2, b: Vector2): Vector2;
     max(a: Vector2, b: Vector2): Vector2;
+    sign(vec: Vector2): Vector2;
     ceil(vec: Vector2): Vector2;
     floor(vec: Vector2): Vector2;
     round(vec: Vector2): Vector2;
@@ -32,6 +33,7 @@ export interface v2 {
     zero(vec: Vector2): Vector2;
     equals(a: Vector2, b: Vector2, epsilon?: number): boolean;
     exactEquals(a: Vector2, b: Vector2): boolean;
+    stringify(vec: Vector2): string;
 }
 export function v2(x = 0, y = 0): Vector2 {
     return [x, y];
@@ -68,6 +70,11 @@ v2.max = function (a: Vector2, b: Vector2): Vector2 {
     a[0] = Math.max(a[0], b[0]);
     a[1] = Math.max(a[1], b[1]);
     return a;
+}
+v2.sign = function (vec: Vector2): Vector2 {
+    vec[0] = Math.sign(vec[0]);
+    vec[1] = Math.sign(vec[1]);
+    return vec;
 }
 v2.ceil = function (vec: Vector2): Vector2 {
     vec[0] = Math.ceil(vec[0]);
@@ -186,6 +193,9 @@ v2.exactEquals = function (a: Vector2, b: Vector2): boolean {
         a[0] === b[0] &&
         a[1] === b[1]
     );
+}
+v2.stringify = function (vec: Vector2): string {
+    return `[${vec[0].toFixed(2)}, ${vec[1].toFixed(2)}]`;
 }
 
 // @ts-ignore

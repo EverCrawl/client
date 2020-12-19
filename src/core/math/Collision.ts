@@ -642,6 +642,24 @@ export function aabb_aabb(first: AABB, second: AABB): Vector2 | null {
     }
 }
 
+export function aabb_aabb_inverse(first: AABB, second: AABB): Vector2 | null {
+    const dx = second.center[0] - first.center[0];
+    const pen_x = second.half[0] + first.half[0] - Math.abs(dx);
+    const dy = second.center[1] - first.center[1];
+    const pen_y = second.half[1] + first.half[1] - Math.abs(dy);
+
+    if (pen_x <= 0 || pen_y <= 0) {
+        if (pen_x < pen_y) {
+            return v2(-pen_x * Math.sign(dx), 0);
+        } else {
+            return v2(0, -pen_y * Math.sign(dy));
+        }
+    } else {
+        return null;
+    }
+
+}
+
 export function aabb_line(first: AABB, second: Line, epsilon = Math.EPSILON): boolean {
     if (!!aabb_point(first, Point.from(second.p0), epsilon) || !!aabb_point(first, Point.from(second.p1), epsilon)) {
         return true;

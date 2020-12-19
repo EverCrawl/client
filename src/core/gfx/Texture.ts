@@ -32,6 +32,8 @@ export const enum TextureKind {
 }
 
 export class Texture {
+    private static ID_SEQUENCE = 0;
+    public readonly id: number;
     public readonly handle: WebGLTexture;
     private target!: GLenum;
 
@@ -41,6 +43,7 @@ export class Texture {
         private kind: TextureKind,
         private options: any
     ) {
+        this.id = Texture.ID_SEQUENCE++;
         this.gl = gl;
         this.handle = createTexture(this.gl);
         this.image.onload = () => {
@@ -166,19 +169,18 @@ function sampleAtlas(gl: WebGL2RenderingContext, texture: WebGLTexture, image: H
         internalFormat,
         options.tilesize, options.tilesize, depth, 0,
         inputFormat, inputType, null);
-    for (let row = 0; row < rows; ++row) {
-        for (let col = 0; col < columns; ++col) {
+    for (let col = 0; col < columns; ++col) {
+        for (let row = 0; row < rows; ++row) {
             Atlas_HelperCtx.clearRect(0, 0, options.tilesize, options.tilesize);
             // draw each tile onto the canvas, and then place it in the texture array
             const x = col * options.tilesize;
             const y = row * options.tilesize;
             Atlas_HelperCtx.drawImage(image,
-                x, (image.height - y - options.tilesize), options.tilesize, options.tilesize,
+                x, y, options.tilesize, options.tilesize,
                 0, 0, options.tilesize, options.tilesize);
             const data = Atlas_HelperCtx.getImageData(0, 0, options.tilesize, options.tilesize);
-            const url = Atlas_HelperCtx.canvas.toDataURL();
 
-            const layer = row + col * rows;
+            const layer = col + row * columns;
             gl.texSubImage3D(target, 0,
                 0, 0, layer,
                 options.tilesize, options.tilesize,

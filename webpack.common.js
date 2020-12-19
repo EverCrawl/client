@@ -25,9 +25,17 @@ module.exports = {
         new CopyPlugin({
             patterns: [
                 { 
-                    from: 'assets', to: 'assets',
+                    from: 'assets', to: './',
                     globOptions: {
-                        ignore: ["**/.git", "**/*.md", "**/.gitkeep", "**/*.sh", "**/*.bat"]
+                        ignore: [
+                            "**/.git", 
+                            "**/*.md", 
+                            "**/.gitkeep", 
+                            "**/*.sh", 
+                            "**/*.bat",
+                            "**/*.tiled-project",
+                            "**/*.tiled-session",
+                        ]
                     }
                 }
             ],

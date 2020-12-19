@@ -1,13 +1,24 @@
 import {
-    Matrix3, m3, Vector2, v2, Vector4, v4
+    Matrix3, m3, Vector2, v2, Vector4, v4, Vector3
 } from "core/math";
 import {
     Buffer, Camera, Shader, Texture, VertexArray, Viewport
 } from "core/gfx";
+import { DynamicBuffer, StaticBuffer } from "./Buffer";
 
-interface SpriteRendererOptions {
-    clearColor: [number, number, number, number];
-}
+// TODO: instead of separate renderers, have seperate render passes
+// a render pass is just a function which sets GL state, accesses/modifies some resources, makes some draw calls, etc
+
+// TODO: draw each tilemap chunk at once through instanced rendering
+// quad vertices + indices
+//      -> drawn N times, where N = chunk.width * chunk.height
+// 3 uniforms
+//      - uint tileset ID 
+//      - uint tile ID
+//      - vec2 position
+
+
+interface SpriteRendererOptions { }
 
 interface SpriteRenderCommand {
     texture: Texture;
@@ -19,7 +30,7 @@ export class SpriteRenderer {
     /// Rendering constructs
     private shader: Shader;
     private buffers: {
-        vertex: Buffer, index: Buffer
+        vertex: StaticBuffer, index: StaticBuffer
     };
     private vertexArray: VertexArray;
 
@@ -27,9 +38,7 @@ export class SpriteRenderer {
 
     constructor(
         public readonly gl: WebGL2RenderingContext,
-        private options: SpriteRendererOptions = {
-            clearColor: [0, 0, 0, 1]
-        }
+        private options: SpriteRendererOptions = {}
     ) {
         this.gl = gl;
 
@@ -71,10 +80,10 @@ void main()
         );
 
         const vertices = [
-            -1, -1, +0.0, +1.0,
-            -1, +1, +0.0, +0.0,
-            +1, +1, +1.0, +0.0,
-            +1, -1, +1.0, +1.0,
+            -1, -1, +0.0, +0.0,
+            -1, +1, +0.0, +1.0,
+            +1, +1, +1.0, +1.0,
+            +1, -1, +1.0, +0.0,
         ];
         const indices = [
             0, 1, 2,
@@ -82,8 +91,8 @@ void main()
         ];
 
         this.buffers = {
-            vertex: new Buffer(this.gl, new Float32Array(vertices), this.gl.ARRAY_BUFFER),
-            index: new Buffer(this.gl, new Int32Array(indices), this.gl.ELEMENT_ARRAY_BUFFER)
+            vertex: Buffer.static(this.gl, new Float32Array(vertices), this.gl.ARRAY_BUFFER),
+            index: Buffer.static(this.gl, new Int32Array(indices), this.gl.ELEMENT_ARRAY_BUFFER)
         };
         this.vertexArray = new VertexArray(this.gl,
             [
@@ -106,7 +115,6 @@ void main()
      * Begin recording commands
      */
     begin(camera: Camera) {
-        this.gl.clearColor(...this.options.clearColor);
         this.gl.enable(this.gl.BLEND);
         this.gl.blendFunc(this.gl.SRC_ALPHA, this.gl.ONE_MINUS_SRC_ALPHA);
 
@@ -169,14 +177,12 @@ void main()
         cmd.texture && cmd.texture.bind(0);
         this.shader.uniforms.uUV.set(cmd.uv);
         this.shader.uniforms.uMODEL.set(cmd.model);
-        this.gl.drawElements(/* TRIANGLES */ 0x0004, 6, /* UNSIGNED_INT */ 0x1405, 0);
+        this.gl.drawElements(this.gl.TRIANGLES, 6, this.gl.UNSIGNED_INT, 0);
     }
 }
 
 
-interface TileRendererOptions {
-    clearColor: [number, number, number, number];
-}
+interface TileRendererOptions { }
 
 interface TileRenderCommand {
     texture: Texture;
@@ -189,7 +195,7 @@ export class TileRenderer {
     /// Rendering constructs
     private shader: Shader;
     private buffers: {
-        vertex: Buffer, index: Buffer
+        vertex: StaticBuffer, index: StaticBuffer
     };
     private vertexArray: VertexArray;
 
@@ -197,9 +203,7 @@ export class TileRenderer {
 
     constructor(
         public readonly gl: WebGL2RenderingContext,
-        private options: TileRendererOptions = {
-            clearColor: [0, 0, 0, 1]
-        }
+        private options: TileRendererOptions = {}
     ) {
         this.gl = gl;
 
@@ -244,10 +248,10 @@ void main()
         );
 
         const vertices = [
-            -1, -1, +0.0, +1.0,
-            -1, +1, +0.0, +0.0,
-            +1, +1, +1.0, +0.0,
-            +1, -1, +1.0, +1.0,
+            -1, -1, +0.0, +0.0,
+            -1, +1, +0.0, +1.0,
+            +1, +1, +1.0, +1.0,
+            +1, -1, +1.0, +0.0,
         ];
         const indices = [
             0, 1, 2,
@@ -255,8 +259,8 @@ void main()
         ];
 
         this.buffers = {
-            vertex: new Buffer(this.gl, new Float32Array(vertices), this.gl.ARRAY_BUFFER),
-            index: new Buffer(this.gl, new Int32Array(indices), this.gl.ELEMENT_ARRAY_BUFFER)
+            vertex: Buffer.static(this.gl, new Float32Array(vertices), this.gl.ARRAY_BUFFER),
+            index: Buffer.static(this.gl, new Int32Array(indices), this.gl.ELEMENT_ARRAY_BUFFER)
         };
         this.vertexArray = new VertexArray(this.gl,
             [
@@ -280,7 +284,6 @@ void main()
      * Begin recording commands
      */
     begin(camera: Camera) {
-        this.gl.clearColor(...this.options.clearColor);
         this.gl.enable(this.gl.BLEND);
         this.gl.blendFunc(this.gl.SRC_ALPHA, this.gl.ONE_MINUS_SRC_ALPHA);
 
@@ -341,6 +344,216 @@ void main()
         cmd.texture && cmd.texture.bind(0);
         this.shader.uniforms.uTILE.set(cmd.tile);
         this.shader.uniforms.uMODEL.set(cmd.model);
-        this.gl.drawElements(/* TRIANGLES */ 0x0004, 6, /* UNSIGNED_INT */ 0x1405, 0);
+        this.gl.drawElements(this.gl.TRIANGLES, 6, this.gl.UNSIGNED_INT, 0);
+    }
+}
+
+interface LineRendererOptions {
+    maxLines: number;
+    lineWidth: number;
+}
+
+// TODO: fallback to rendering lines as quads
+export class LineRenderer {
+    private shader: Shader;
+    private vertexArray: VertexArray;
+
+    private buffer: {
+        cpu: number[],
+        gpu: DynamicBuffer
+    };
+
+    constructor(
+        public readonly gl: WebGL2RenderingContext,
+        private options: LineRendererOptions = {
+            maxLines: 512,
+            lineWidth: 4
+        }
+    ) {
+
+        this.shader = new Shader(this.gl,
+            `#version 300 es
+precision mediump float;
+uniform mat4 uVIEW;
+uniform mat4 uPROJECTION;
+layout(location = 0) in vec2 aPOSITION;
+layout(location = 1) in vec4 aCOLOR;
+out vec4 vColor;
+void main()
+{
+    vColor = aCOLOR;
+    gl_Position = uPROJECTION * uVIEW * vec4(aPOSITION, 0.0, 1.0);
+}`,
+            `#version 300 es
+precision mediump float;
+in vec4 vColor;
+out vec4 oFragColor;
+void main()
+{
+    oFragColor = vColor;
+}`
+        );
+
+        // sizeof(point) == float 2-component vector + float 4-component vector
+        const sizeof_line = (4 * 2) + (4 * 4);
+        const bufferSize = sizeof_line * this.options.maxLines;
+
+        this.buffer = {
+            cpu: [],
+            gpu: Buffer.dynamic(this.gl, bufferSize, this.gl.ARRAY_BUFFER)
+        };
+
+        this.vertexArray = new VertexArray(this.gl, [{
+            buffer: this.buffer.gpu, descriptors: [
+                { location: 0, arraySize: 2, baseType: this.gl.FLOAT, normalized: false },
+                { location: 1, arraySize: 4, baseType: this.gl.FLOAT, normalized: false },
+            ]
+        }]);
+    }
+
+    /**
+     * Begin recording commands
+     */
+    begin(camera: Camera) {
+        this.gl.lineWidth(this.options.lineWidth);
+        this.gl.enable(this.gl.BLEND);
+        this.gl.blendFunc(this.gl.SRC_ALPHA, this.gl.ONE_MINUS_SRC_ALPHA);
+
+        this.shader.bind();
+        this.shader.uniforms.uVIEW.set(camera.view);
+        this.shader.uniforms.uPROJECTION.set(camera.projection);
+
+        this.vertexArray.bind();
+
+        this.buffer.cpu = [];
+    }
+
+    /**
+     * Submit a render command
+     * @param rotation in radians
+     */
+    draw(
+        p0: Vector2,
+        p1: Vector2,
+        color: Vector4 = [0.5, 0.5, 0.5, 1.0],
+    ) {
+        this.buffer.cpu.push(
+            ...p0, ...color,
+            ...p1, ...color
+        );
+    }
+
+    /**
+     * Flush buffer
+     */
+    end() {
+        this.buffer.gpu.upload(new Float32Array(this.buffer.cpu), 0);
+        this.gl.drawArrays(this.gl.LINES, 0, this.buffer.cpu.length / 6);
+    }
+}
+
+interface PointRendererOptions {
+    maxPoints: number;
+}
+
+export class PointRenderer {
+    private shader: Shader;
+    private vertexArray: VertexArray;
+
+    private buffer: {
+        cpu: number[],
+        gpu: DynamicBuffer
+    };
+
+    constructor(
+        public readonly gl: WebGL2RenderingContext,
+        private options: PointRendererOptions = {
+            maxPoints: 1024
+        }
+    ) {
+        this.shader = new Shader(
+            this.gl,
+            `#version 300 es
+precision mediump float;
+uniform mat4 uVIEW;
+uniform mat4 uPROJECTION;
+layout(location = 0) in vec2 aPOSITION;
+layout(location = 1) in vec3 aCOLOR;
+out vec3 vColor;
+void main()
+{
+    vColor = aCOLOR;
+    gl_Position = uPROJECTION * uVIEW * vec4(aPOSITION.x, aPOSITION.y, 0.0, 1.0);
+    // TODO: variable point size
+    gl_PointSize = 10.0;
+}`,
+            `#version 300 es
+#extension GL_OES_standard_derivatives : enable
+precision mediump float;
+in vec3 vColor;
+out vec4 oFragColor;
+void main()
+{
+    vec2 cxy = 2.0 * gl_PointCoord - 1.0;
+    float r = dot(cxy, cxy);
+    float delta = fwidth(r);
+    float alpha = 1.0 - smoothstep(1.0 - delta, 1.0 + delta, r);
+    oFragColor = vec4(vColor, alpha);
+}`
+        );
+
+        // sizeof(point) == float 2-component vector + float 3-component vector
+        const sizeof_point = (4 * 2) + (4 * 3);
+        const bufferSize = sizeof_point * this.options.maxPoints;
+
+        console.log(sizeof_point, bufferSize);
+
+        this.buffer = {
+            cpu: [],
+            gpu: Buffer.dynamic(this.gl, bufferSize, this.gl.ARRAY_BUFFER)
+        }
+        this.vertexArray = new VertexArray(this.gl, [{
+            buffer: this.buffer.gpu, descriptors: [
+                { location: 0, arraySize: 2, baseType: this.gl.FLOAT, normalized: false },
+                { location: 1, arraySize: 3, baseType: this.gl.FLOAT, normalized: false },
+            ]
+        }]);
+
+        console.log(this);
+    }
+
+    /**
+     * Begin recording commands
+     */
+    begin(camera: Camera) {
+        this.gl.enable(this.gl.BLEND);
+        this.gl.blendFunc(this.gl.SRC_ALPHA, this.gl.ONE_MINUS_SRC_ALPHA);
+
+        this.shader.bind();
+        this.shader.uniforms.uVIEW.set(camera.view);
+        this.shader.uniforms.uPROJECTION.set(camera.projection);
+
+        this.vertexArray.bind();
+
+        this.buffer.cpu = [];
+    }
+
+    /**
+     * Submit a render command
+     * @param rotation in radians
+     */
+    draw(
+        position: Vector2,
+        color: Vector3 = [0.5, 0.5, 0.5],
+    ) {
+        this.buffer.cpu.push(...position, ...color);
+    }
+
+    /**
+     * Flush buffer
+     */
+    end() {
+        this.buffer.gpu.upload(new Float32Array(this.buffer.cpu), 0);
+        this.gl.drawArrays(this.gl.POINTS, 0, this.buffer.cpu.length / 5);
     }
 }

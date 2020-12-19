@@ -24,33 +24,33 @@ function getTypedArrayInfo(array: ArrayBufferView | ArrayBuffer): TypedArrayInfo
     }
 }
 
-export class Buffer {
-    public readonly gl: WebGL2RenderingContext;
-    public readonly handle: WebGLBuffer;
-    public readonly target: GLenum;
+export type StaticBuffer = Buffer<"static">;
+export type DynamicBuffer = Buffer<"dynamic">;
+
+export class Buffer<Type extends "static" | "dynamic"> {
+
     private byteLength_: number;
-    private typeInfo_: TypedArrayInfo;
+    private info_: TypedArrayInfo | undefined;
 
-    constructor(
-        gl: WebGL2RenderingContext,
-        data: ArrayBufferView | ArrayBuffer,
-        target: GLenum
+    private constructor(
+        public readonly gl: WebGL2RenderingContext,
+        public readonly handle: WebGLBuffer,
+        public readonly target: GLenum,
+        public readonly usage: GLenum,
+        byteLength: number,
+        info: Type extends "static" ? TypedArrayInfo : TypedArrayInfo | undefined
     ) {
-        this.gl = gl;
-        this.handle = createBuffer(this.gl);
-        this.target = target;
-
-        this.gl.bindBuffer(this.target, this.handle);
-        this.gl.bufferData(this.target, data, this.gl.STATIC_DRAW);
-        this.gl.bindBuffer(this.target, null);
-
-        this.byteLength_ = data.byteLength;
-        this.typeInfo_ = getTypedArrayInfo(data);
+        this.byteLength_ = byteLength;
+        this.info_ = info;
     }
 
     get byteLength() { return this.byteLength_; }
-    get elementType() { return this.typeInfo_.type; }
-    get elementSize() { return this.typeInfo_.elementSize; }
+    /** undefined in case the buffer is empty */
+    get elementType() { return this.info_?.type; }
+    /** undefined in case the buffer is empty */
+    get elementSize() { return this.info_?.elementSize; }
+    /** undefined in case the buffer is empty */
+    get elementTypeName() { return this.info_?.typeName; }
 
     bind() {
         this.gl.bindBuffer(this.target, this.handle);
@@ -58,5 +58,64 @@ export class Buffer {
 
     unbind() {
         this.gl.bindBuffer(this.target, null);
+    }
+
+    upload(data: ArrayBufferView | ArrayBuffer, dstOffset = -1) {
+        if (DEBUG && this.usage === this.gl.STATIC_DRAW)
+            throw new Error(`Attempted to overwrite static buffer`);
+
+        this.info_ = getTypedArrayInfo(data);
+
+        this.bind();
+        if (dstOffset === -1) {
+            this.gl.bufferData(this.target, data, this.usage);
+        } else {
+            if (DEBUG && this.byteLength_ < dstOffset + data.byteLength)
+                throw new Error(`Buffer overflow: ${dstOffset + data.byteLength}/${this.byteLength_}`);
+            this.gl.bufferSubData(this.target, dstOffset, data);
+        }
+        this.unbind();
+    }
+
+    static static(
+        gl: WebGL2RenderingContext,
+        data: ArrayBufferView | ArrayBuffer,
+        target: GLenum
+    ): StaticBuffer {
+        const handle = createBuffer(gl);
+
+        gl.bindBuffer(target, handle);
+        gl.bufferData(target, data, gl.STATIC_DRAW);
+        gl.bindBuffer(target, null);
+
+        const byteLength = data.byteLength;
+        const info = getTypedArrayInfo(data);
+
+        return new Buffer<"static">(gl, handle, target, gl.STATIC_DRAW, byteLength, info);
+    }
+
+    static dynamic(
+        gl: WebGL2RenderingContext,
+        data: ArrayBufferView | ArrayBuffer | number | null,
+        target: GLenum
+    ): DynamicBuffer {
+        const handle = createBuffer(gl);
+
+        let byteLength = 0;
+        let info: TypedArrayInfo | undefined;
+        if (data != null) {
+            gl.bindBuffer(target, handle);
+            if (typeof data === "number") {
+                byteLength = data;
+                gl.bufferData(target, data, gl.DYNAMIC_DRAW);
+            } else {
+                byteLength = data.byteLength;
+                info = getTypedArrayInfo(data)
+                gl.bufferData(target, data, gl.DYNAMIC_DRAW);
+            }
+            gl.bindBuffer(target, null);
+        }
+
+        return new Buffer<"dynamic">(gl, handle, target, gl.DYNAMIC_DRAW, byteLength, info);
     }
 }

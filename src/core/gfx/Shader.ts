@@ -25,6 +25,8 @@ type Uniform = {
 
 let boundShader: WebGLProgram | null = null;
 export class Shader {
+    private static ID_SEQUENCE = 0;
+    public readonly id: number;
     public readonly gl: WebGL2RenderingContext;
     public readonly program: WebGLProgram;
     public readonly uniforms: { [name: string]: Uniform };
@@ -33,6 +35,7 @@ export class Shader {
         gl: WebGL2RenderingContext,
         vertex: string, fragment: string
     ) {
+        this.id = Shader.ID_SEQUENCE++;
         this.gl = gl;
         // compile the shader
         const program = linkProgram(this.gl,
@@ -43,7 +46,7 @@ export class Shader {
         // reflect uniforms
         this.uniforms = {};
         this.bind();
-        for (let i = 0; i < this.gl.getProgramParameter(this.program, this.gl.ACTIVE_UNIFORMS); ++i) {
+        for (let i = 0, len = this.gl.getProgramParameter(this.program, this.gl.ACTIVE_UNIFORMS); i < len; ++i) {
             const info = this.gl.getActiveUniform(this.program, i)!;
             const location = this.gl.getUniformLocation(program, info.name)!;
             this.uniforms[info.name] = {
@@ -143,6 +146,7 @@ function linkProgram(gl: WebGL2RenderingContext, vertex: WebGLShader, fragment: 
 }
 
 function createSetter(gl: WebGL2RenderingContext, /* shader: WebGLProgram,  */type: number, location: WebGLUniformLocation): UniformSetter {
+    // TODO: this can be simplified to not use a switch statement
     switch (type) {
         case 0x1400:
         case 0x1402:

@@ -26,32 +26,33 @@ export interface BufferDescriptor {
      * Whether the value should be normalized to the (0, 1) range.
      */
     normalized: boolean;
-    /* stride: number, 
-    offset: number */
 }
 
 function sizeof(type: GLenum) {
     switch (type) {
         case 0x1400: return /* byte */ 1;
-        case 0x1401: return /* unsigned_byte */ 1;
+        case 0x1401: return /* unsigned byte */ 1;
         case 0x8b56: return /* bool */ 1;
         case 0x1402: return /* short */ 2;
-        case 0x1403: return /* unsigned_short */ 2;
+        case 0x1403: return /* unsigned short */ 2;
         case 0x1404: return /* int */ 4;
-        case 0x1405: return /* unsigned_int */ 4;
+        case 0x1405: return /* unsigned int */ 4;
         case 0x1406: return /* float */ 4;
         default: throw new GLError(ErrorKind.UnknownBaseType, { type });
     }
 }
 
 export class VertexArray {
+    private static ID_SEQUENCE = 0;
+    public readonly id: number;
     public readonly gl: WebGL2RenderingContext;
     public readonly handle: WebGLVertexArrayObject;
 
     constructor(
         gl: WebGL2RenderingContext,
-        private buffers: { buffer: Buffer, descriptors: BufferDescriptor[] }[]
+        private buffers: { buffer: Buffer<"static" | "dynamic">, descriptors: BufferDescriptor[] }[]
     ) {
+        this.id = VertexArray.ID_SEQUENCE++;
         this.gl = gl;
         this.handle = createVertexArray(this.gl);
 
