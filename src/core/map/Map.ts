@@ -26,11 +26,10 @@ function buildNarrowPhasePrimitives(layer: string, chunks: Tiled.LayerDataChunk[
                 const tile = chunk.tiles[chunkX + chunkY * chunk.width];
                 const tileInfo = tile?.tileset.tiles[tile.id];
                 collidable = parseBool(tileInfo?.properties["collision"]?.value ?? "false")!;
+                if (collidable) break;
             }
 
             if (collidable) {
-                // if so, add it to the current row
-                // if it doesn't exist, create a new one
                 if (!currentRow) {
                     currentRow = {
                         x, y,
@@ -40,16 +39,12 @@ function buildNarrowPhasePrimitives(layer: string, chunks: Tiled.LayerDataChunk[
                     currentRow.length++;
                 }
             } else {
-                // if the tile isn't collidable, but we have a row
-                // then end the current row
                 if (currentRow) {
                     rows.push(currentRow);
                     currentRow = null;
                 }
             }
         }
-        // after we've looped over an entire tile row
-        // deposit whatever we have
         if (currentRow) {
             rows.push(currentRow);
             currentRow = null;
@@ -61,7 +56,6 @@ function buildNarrowPhasePrimitives(layer: string, chunks: Tiled.LayerDataChunk[
     let lastRow: { x: number; y: number; length: number; } | undefined;
     let currentRowGroup: { x: number; y: number; length: number; }[] = [];
 
-    // scan x-first
     for (let x = -size[0] / 2; x < size[0] / 2; ++x) {
         for (const row of rows) {
             if (row.x !== x) continue;

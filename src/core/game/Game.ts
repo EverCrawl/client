@@ -2,7 +2,7 @@ import OverlayContainer from "app/Overlay";
 import * as Core from "core";
 import { v2, Vector2, Matrix3, m3 } from "core";
 import { LineRenderer, PointRenderer } from "core/gfx";
-import { AABB, v3, v4, Vector3, Vector4 } from "core/math";
+import { AABB, aabb_aabb, v3, v4, Vector3, Vector4 } from "core/math";
 import { Socket } from "core/net";
 
 // high priority:
@@ -134,7 +134,7 @@ export class Game {
         // "physics"
         const speed = 2;
         this.state.pos = new Position(v2(0, 2 * 32));
-        this.state.pAABB = new AABB(v2.clone(this.state.pos.current), v2(16, 16));
+        this.state.pAABB = new AABB(v2.clone(this.state.pos.current), v2(8, 8));
         this.state.vel = v2();
         // animation
         this.state.lastDirection = 0;
@@ -175,9 +175,15 @@ export class Game {
                     this.state.pos.current[0] + this.state.vel[0],
                     this.state.pos.current[1] + this.state.vel[1]
                 );
+                this.state.pAABB.moveTo(nextPos);
                 for (const layer of this.state.tilemap.layers) {
                     for (const aabb of layer.collidables) {
-
+                        const result = aabb_aabb(this.state.pAABB, aabb);
+                        if (result) {
+                            nextPos[0] += result[0];
+                            nextPos[1] += result[1];
+                            this.state.pAABB.moveTo(nextPos);
+                        }
                     }
                 }
                 this.state.pos.update(nextPos);
@@ -222,6 +228,29 @@ export class Game {
                                 aabb,
                                 v4(0.9, 0.7, 0.4, 1.0));
                         }
+                    }
+                    this.state.pAABB.moveTo(this.state.pos.current);
+                    let collision = false;
+                    for (const layer of this.state.tilemap.layers) {
+                        for (const aabb of layer.collidables) {
+                            const result = aabb_aabb(this.state.pAABB, aabb);
+                            if (result) {
+                                collision = true;
+                                break;
+                            }
+                        }
+                        if (collision) break;
+                    }
+                    if (collision) {
+                        drawBorderAABB(this.lineRenderer,
+                            v2(0, 0),
+                            new AABB(v2(), v2(8, 8)),
+                            v4(0.9, 0.1, 0.6, 1.0));
+                    } else {
+                        drawBorderAABB(this.lineRenderer,
+                            v2(0, 0),
+                            new AABB(v2(), v2(8, 8)),
+                            v4(0.9, 0.5, 0.6, 1.0));
                     }
                     this.lineRenderer.end();
                 }
