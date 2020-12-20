@@ -5,20 +5,48 @@ import { LineRenderer, PointRenderer } from "core/gfx";
 import { AABB, aabb_aabb, v3, v4, Vector3, Vector4 } from "core/math";
 import { Socket } from "core/net";
 
-// high priority:
-// TODO: (game server) collisions
-// TODO: resource loading callbacks
-// TODO(?): node.js auth server
-// TODO: (game server) DB access
-// TODO: (auth + game servers) authentication with DB
-// TODO: (both) basic gameplay
-//      - move, attack (slash), attack (dash), attack (spell)
-// TODO: client-side prediction
-// TODO: playtest deployment
-// low priority:
-// TODO: change shader naming convention from all-caps to CamelCase
-// TODO: unify renderer architecture
-// TODO: unify texture sampling
+/*
+high priority:
+TODO: refactoring!
+    * cache spritesheet, texture, tilemap loads
+        - ctrl+f "fetch" and cache it!
+    * everything from the main loop:
+        - entity
+            local player holds input, animation, sprite, position
+            remote entities hold any combination of:
+                animation,
+                sprite,
+                position,
+                and other components....
+            world holds local player and remote entities
+            -> input_update(world)
+                - turn raw inputs into actions (move_left, move_right, skill#12, etc)
+                - store it in world.action_buffer
+            -> network_update(world)
+                - (?) handle_all(world.socket.packets)
+            -> physics_update(world)
+                - reconciliation:
+                    - check for errors in previous prediction
+                    - resimulate if necessary
+                - update entities' position/velocity
+            -> animation_update(world)
+                - update player animation based on input
+                - update entity animation based on physics state
+TODO: swept AABB
+TODO: (game server) collisions
+TODO: resource loading callbacks
+TODO(?): node.js auth server
+TODO: (game server) DB access
+TODO: (auth + game servers) authentication with DB
+TODO: (both) basic gameplay
+     - move, attack (slash), attack (dash), attack (spell)
+TODO: client-side prediction
+TODO: playtest deployment
+
+low priority:
+TODO: unify renderer architecture 
+    Renderer base class, subclass to create new renderers
+*/
 
 class Position extends Core.State<Vector2> {
     constructor(initial: Vector2) {

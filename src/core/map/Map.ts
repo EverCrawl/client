@@ -18,15 +18,18 @@ function buildNarrowPhasePrimitives(layer: string, chunks: Tiled.LayerDataChunk[
 
             let collidable = false;
             for (const chunk of chunks) {
-                if (x < chunk.x || x > chunk.x + chunk.width) continue;
-                if (y < chunk.y || y > chunk.y + chunk.height) continue;
-                const chunkX = layerX % chunk.width;
-                const chunkY = layerY % chunk.height;
+                if (x >= chunk.x && x < chunk.x + chunk.width &&
+                    y >= chunk.y && y < chunk.y + chunk.height) {
+                    const chunkX = layerX % chunk.width;
+                    const chunkY = layerY % chunk.height;
 
-                const tile = chunk.tiles[chunkX + chunkY * chunk.width];
-                const tileInfo = tile?.tileset.tiles[tile.id];
-                collidable = parseBool(tileInfo?.properties["collision"]?.value ?? "false")!;
-                if (collidable) break;
+                    const tileId = chunkX + chunkY * chunk.width;
+                    const tile = chunk.tiles[chunkX + chunkY * chunk.width];
+                    const tileInfo = tile?.tileset.tiles[tile.id];
+                    collidable = parseBool(tileInfo?.properties["collision"]?.value ?? "false")!;
+
+                    if (collidable) break;
+                }
             }
 
             if (collidable) {
