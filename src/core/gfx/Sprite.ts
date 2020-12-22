@@ -233,6 +233,8 @@ interface Spritesheet_Friend {
 }
 
 export class Spritesheet {
+    private static cache: Map<string, Spritesheet> = new Map();
+
     public readonly gl: WebGL2RenderingContext;
     public readonly path: string
     private loaded_: boolean;
@@ -250,9 +252,10 @@ export class Spritesheet {
         this.path = path;
         this.loaded_ = false;
 
-        fetch(path)
-            .then(response => response.json())
-            .then(json => this.load(json));
+        if (Spritesheet.cache.has(path)) return Spritesheet.cache.get(path)!;
+        else fetch(path)
+            .then(it => it.json())
+            .then(it => (this.load(it), Spritesheet.cache.set(path, this)));
     }
 
     get ready() {

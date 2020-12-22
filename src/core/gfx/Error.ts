@@ -38,7 +38,7 @@ export function stringifyErrorKind(code: ErrorKind, extra?: any) {
     if (!DEBUG) return `GL operation failed. Code: ${code}`;
     switch (code) {
         case ErrorKind.EmptyVertexArray:
-            return "Cannot create empty vertex array.";
+            return "Cannot create empty vertex array";
         case ErrorKind.UnknownBaseType:
             return `Unknown base type: ${extra.type}`;
         case ErrorKind.ShaderCompileFailure:
@@ -46,11 +46,11 @@ export function stringifyErrorKind(code: ErrorKind, extra?: any) {
         case ErrorKind.CreateFailure:
             return `Failed to create ${extra.what}: ${extra.why}`;
         case ErrorKind.ContextAcquireFailure:
-            return `Failed to acquire context ${extra.contextId}. Supported: ${isContextTypeSupported(extra.contextId)}.`;
+            return `Failed to acquire context ${extra.contextId}. Supported: ${isContextTypeSupported(extra.contextId)}`;
         case ErrorKind.UnknownUniformType:
             return `Unknown uniform type: ${extra.type}`;
         case ErrorKind.InvalidUniformData:
-            return `Attempted to set uniform of type ${extra.type} with data of length ${extra.actualLength}, expected ${extra.expectedLength}`;
+            return `Attempted to upload ${extra.data} to uniform of type ${extra.type}`;
         case ErrorKind.UnknownArrayType:
             return `Unknown array type: ${extra.type}`;
         case ErrorKind.Unsupported:

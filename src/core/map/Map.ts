@@ -138,6 +138,7 @@ function calcRealMapSize(map: Tiled.TileMap): Vector2 {
 }
 
 export class TileMap {
+    private static cache: Map<string, TileMap> = new Map();
 
     tilesets: Texture[] = [];
     layers: Layer[] = [];
@@ -147,6 +148,7 @@ export class TileMap {
         gl: WebGL2RenderingContext,
         path: string,
     ) {
+        if (TileMap.cache.has(path)) return TileMap.cache.get(path)!;
         (async () => {
             const mapData = TiledParser.parse(await (await fetch(path)).text());
 
@@ -175,6 +177,7 @@ export class TileMap {
                 });
             }
 
+            TileMap.cache.set(path, this);
             console.log("finished loading:", path);
         })();
     }

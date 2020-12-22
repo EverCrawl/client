@@ -114,20 +114,20 @@ export class Texture {
 }
 
 
-const helperContext = (() => {
+const BufferHelperCtx: CanvasRenderingContext2D = (() => {
     const canvas = document.createElement("canvas")!;
     return canvas.getContext("2d")!;
 })();
 function toImageElement(buffer: TextureBuffer, width: number, height: number) {
-    helperContext.canvas.width = width;
-    helperContext.canvas.height = height;
-    helperContext.clearRect(0, 0, helperContext.canvas.width, helperContext.canvas.height);
-    const imgData = helperContext.getImageData(0, 0, width, height);
+    BufferHelperCtx.canvas.width = width;
+    BufferHelperCtx.canvas.height = height;
+    BufferHelperCtx.clearRect(0, 0, BufferHelperCtx.canvas.width, BufferHelperCtx.canvas.height);
+    const imgData = BufferHelperCtx.getImageData(0, 0, width, height);
     imgData.data.set(buffer);
-    helperContext.putImageData(imgData, 0, 0);
+    BufferHelperCtx.putImageData(imgData, 0, 0);
 
     const img = new Image();
-    img.src = helperContext.canvas.toDataURL();
+    img.src = BufferHelperCtx.canvas.toDataURL();
     return img;
 }
 
@@ -147,7 +147,7 @@ function sampleImage(gl: WebGL2RenderingContext, texture: WebGLTexture, image: H
     gl.bindTexture(target, null);
 }
 
-let Atlas_HelperCtx: CanvasRenderingContext2D = (() => {
+const AtlasHelperCtx: CanvasRenderingContext2D = (() => {
     const canvas = document.createElement("canvas")!;
     return canvas.getContext("2d")!;
 })();
@@ -161,24 +161,25 @@ function sampleAtlas(gl: WebGL2RenderingContext, texture: WebGLTexture, image: H
     const depth = columns * rows;
 
     // resize helper canvas
-    Atlas_HelperCtx.canvas.width = options.tilesize;
-    Atlas_HelperCtx.canvas.height = options.tilesize;
+    AtlasHelperCtx.canvas.width = options.tilesize;
+    AtlasHelperCtx.canvas.height = options.tilesize;
 
+    // allocate storage
     gl.bindTexture(target, texture);
     gl.texImage3D(target, 0,
         internalFormat,
         options.tilesize, options.tilesize, depth, 0,
         inputFormat, inputType, null);
+    // draw each tile onto the canvas, and then place it in the texture array
     for (let col = 0; col < columns; ++col) {
         for (let row = 0; row < rows; ++row) {
-            Atlas_HelperCtx.clearRect(0, 0, options.tilesize, options.tilesize);
-            // draw each tile onto the canvas, and then place it in the texture array
+            AtlasHelperCtx.clearRect(0, 0, options.tilesize, options.tilesize);
             const x = col * options.tilesize;
             const y = row * options.tilesize;
-            Atlas_HelperCtx.drawImage(image,
+            AtlasHelperCtx.drawImage(image,
                 x, y, options.tilesize, options.tilesize,
                 0, 0, options.tilesize, options.tilesize);
-            const data = Atlas_HelperCtx.getImageData(0, 0, options.tilesize, options.tilesize);
+            const data = AtlasHelperCtx.getImageData(0, 0, options.tilesize, options.tilesize);
 
             const layer = col + row * columns;
             gl.texSubImage3D(target, 0,

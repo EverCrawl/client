@@ -71,8 +71,6 @@ export class Shader {
     }
 }
 
-const underline = (text: TemplateStringsArray) => [`%c${text[0]}`, `text-decoration: underline;`];
-
 function buildShaderErrorMessage(gl: WebGL2RenderingContext, shader: WebGLShader): string {
     const source = gl.getShaderSource(shader);
     const log = gl.getShaderInfoLog(shader);
@@ -125,8 +123,8 @@ function compileShader(gl: WebGL2RenderingContext, source: string, type: GLenum)
     gl.compileShader(shader);
     if (DEBUG && gl.getShaderParameter(shader, gl.COMPILE_STATUS) === false) {
         throw new GLError(ErrorKind.ShaderCompileFailure, {
-            message: buildShaderErrorMessage(gl, shader),
-            type: gl.getShaderParameter(shader, gl.SHADER_TYPE) === gl.VERTEX_SHADER ? "VERTEX" : "FRAGMENT"
+            type: gl.getShaderParameter(shader, gl.SHADER_TYPE) === gl.VERTEX_SHADER ? "VERTEX" : "FRAGMENT",
+            message: buildShaderErrorMessage(gl, shader)
         }).message;
     }
     return shader;
@@ -147,6 +145,7 @@ function linkProgram(gl: WebGL2RenderingContext, vertex: WebGLShader, fragment: 
 
 function createSetter(gl: WebGL2RenderingContext, /* shader: WebGLProgram,  */type: number, location: WebGLUniformLocation): UniformSetter {
     // TODO: this can be simplified to not use a switch statement
+    let typeInfo: [desc: "scalar" | "array" | "matrix", size: number, name: string];
     switch (type) {
         case 0x1400:
         case 0x1402:
@@ -156,162 +155,90 @@ function createSetter(gl: WebGL2RenderingContext, /* shader: WebGLProgram,  */ty
         case 0x8b5f:
         case 0x8b60:
         case 0x8dc1:
-        case 0x8dd2: return function (data) {
-            if (DEBUG && typeof data !== "number") {
-                throw new GLError(ErrorKind.InvalidUniformData, { type: stringifyType(type), actualLength: data.length, expectedLength: 1 });
-            }
-            gl["uniform1i"](location, data as number);
-        };
+        case 0x8dd2:
+            typeInfo = ["scalar", 1, "uniform1i"]; break;
         case 0x1401:
         case 0x1403:
-        case 0x1405: return function (data) {
-            if (DEBUG && typeof data !== "number") {
-                throw new GLError(ErrorKind.InvalidUniformData, { type: stringifyType(type), actualLength: data.length, expectedLength: 1 });
-            }
-            gl["uniform1ui"](location, data as number)
-        };
+        case 0x1405:
+            typeInfo = ["scalar", 1, "uniform1ui"]; break;
         case 0x8b53:
-        case 0x8b57: return function (data) {
-            if (DEBUG && (!Array.isArray(data) || data.length !== 2)) {
-                throw new GLError(ErrorKind.InvalidUniformData, { type: stringifyType(type), actualLength: 1, expectedLength: 2 });
-            }
-            gl["uniform2iv"](location, data as number[])
-        };
+        case 0x8b57:
+            typeInfo = ["array", 2, "uniform2iv"]; break;
         case 0x8b54:
-        case 0x8b58: return function (data) {
-            if (DEBUG && (!Array.isArray(data) || data.length !== 3)) {
-                throw new GLError(ErrorKind.InvalidUniformData, { type: stringifyType(type), actualLength: 1, expectedLength: 3 });
-            }
-            gl["uniform3iv"](location, data as number[])
-        };
+        case 0x8b58:
+            typeInfo = ["array", 3, "uniform3iv"]; break;
         case 0x8b55:
-        case 0x8b59: return function (data) {
-            if (DEBUG && (!Array.isArray(data) || data.length !== 4)) {
-                throw new GLError(ErrorKind.InvalidUniformData, { type: stringifyType(type), actualLength: 1, expectedLength: 4 });
-            }
-            gl["uniform4iv"](location, data as number[])
-        };
-        case 0x1406: return function (data) {
-            if (DEBUG && typeof data !== "number") {
-                throw new GLError(ErrorKind.InvalidUniformData, { type: stringifyType(type), actualLength: data.length, expectedLength: 1 });
-            }
-            gl["uniform1f"](location, data as number)
-        };
-        case 0x8b50: return function (data) {
-            if (DEBUG && (!Array.isArray(data) || data.length !== 2)) {
-                throw new GLError(ErrorKind.InvalidUniformData, { type: stringifyType(type), actualLength: 1, expectedLength: 2 });
-            }
-            gl["uniform2fv"](location, data as number[])
-        };
-        case 0x8b51: return function (data) {
-            if (DEBUG && (!Array.isArray(data) || data.length !== 3)) {
-                throw new GLError(ErrorKind.InvalidUniformData, { type: stringifyType(type), actualLength: 1, expectedLength: 3 });
-            }
-            gl["uniform3fv"](location, data as number[])
-        };
-        case 0x8b52: return function (data) {
-            if (DEBUG && (!Array.isArray(data) || data.length !== 4)) {
-                throw new GLError(ErrorKind.InvalidUniformData, { type: stringifyType(type), actualLength: 1, expectedLength: 4 });
-            }
-            gl["uniform4fv"](location, data as number[])
-        };
-        case 0x8b55: return function (data) {
-            if (DEBUG && typeof data !== "number") {
-                throw new GLError(ErrorKind.InvalidUniformData, { type: stringifyType(type), actualLength: data.length, expectedLength: 1 });
-            }
-            gl["uniform1ui"](location, data as number)
-        };
-        case 0x8dc6: return function (data) {
-            if (DEBUG && (!Array.isArray(data) || data.length !== 2)) {
-                throw new GLError(ErrorKind.InvalidUniformData, { type: stringifyType(type), actualLength: 1, expectedLength: 2 });
-            }
-            gl["uniform2uiv"](location, data as number[])
-        };
-        case 0x8dc7: return function (data) {
-            if (DEBUG && (!Array.isArray(data) || data.length !== 3)) {
-                throw new GLError(ErrorKind.InvalidUniformData, { type: stringifyType(type), actualLength: 1, expectedLength: 3 });
-            }
-            gl["uniform3uiv"](location, data as number[])
-        };
-        case 0x8dc8: return function (data) {
-            if (DEBUG && (!Array.isArray(data) || data.length !== 4)) {
-                throw new GLError(ErrorKind.InvalidUniformData, { type: stringifyType(type), actualLength: 1, expectedLength: 4 });
-            }
-            gl["uniform4uiv"](location, data as number[])
-        };
-        case 0x8b57: return function (data) {
-            if (DEBUG && (!Array.isArray(data) || data.length !== 2)) {
-                throw new GLError(ErrorKind.InvalidUniformData, { type: stringifyType(type), actualLength: 1, expectedLength: 2 });
-            }
-            gl["uniform2iv"](location, data as number[])
-        };
-        case 0x8b58: return function (data) {
-            if (DEBUG && (!Array.isArray(data) || data.length !== 3)) {
-                throw new GLError(ErrorKind.InvalidUniformData, { type: stringifyType(type), actualLength: 1, expectedLength: 3 });
-            }
-            gl["uniform3iv"](location, data as number[])
-        };
-        case 0x8b59: return function (data) {
-            if (DEBUG && (!Array.isArray(data) || data.length !== 4)) {
-                throw new GLError(ErrorKind.InvalidUniformData, { type: stringifyType(type), actualLength: 1, expectedLength: 4 });
-            }
-            gl["uniform4iv"](location, data as number[])
-        };
-        case 0x8b5a: return function (data) {
-            if (DEBUG && (!Array.isArray(data) || data.length !== 2 * 2)) {
-                throw new GLError(ErrorKind.InvalidUniformData, { type: stringifyType(type), actualLength: 1, expectedLength: 2 * 2 });
-            }
-            gl["uniformMatrix2fv"](location, false, data as number[])
-        };
-        case 0x8b65: return function (data) {
-            if (DEBUG && (!Array.isArray(data) || data.length !== 2 * 3)) {
-                throw new GLError(ErrorKind.InvalidUniformData, { type: stringifyType(type), actualLength: 1, expectedLength: 2 * 3 });
-            }
-            gl["uniformMatrix2x3fv"](location, false, data as number[])
-        };
-        case 0x8b66: return function (data) {
-            if (DEBUG && (!Array.isArray(data) || data.length !== 2 * 4)) {
-                throw new GLError(ErrorKind.InvalidUniformData, { type: stringifyType(type), actualLength: 1, expectedLength: 2 * 4 });
-            }
-            gl["uniformMatrix2x4fv"](location, false, data as number[])
-        };
-        case 0x8b67: return function (data) {
-            if (DEBUG && (!Array.isArray(data) || data.length !== 3 * 2)) {
-                throw new GLError(ErrorKind.InvalidUniformData, { type: stringifyType(type), actualLength: 1, expectedLength: 3 * 2 });
-            }
-            gl["uniformMatrix3x2fv"](location, false, data as number[])
-        };
-        case 0x8b5b: return function (data) {
-            if (DEBUG && (!Array.isArray(data) || data.length !== 3 * 3)) {
-                throw new GLError(ErrorKind.InvalidUniformData, { type: stringifyType(type), actualLength: 1, expectedLength: 3 * 3 });
-            }
-            gl["uniformMatrix3fv"](location, false, data as number[])
-        };
-        case 0x8b68: return function (data) {
-            if (DEBUG && (!Array.isArray(data) || data.length !== 3 * 4)) {
-                throw new GLError(ErrorKind.InvalidUniformData, { type: stringifyType(type), actualLength: 1, expectedLength: 3 * 4 });
-            }
-            gl["uniformMatrix3x4fv"](location, false, data as number[])
-        };
-        case 0x8b69: return function (data) {
-            if (DEBUG && (!Array.isArray(data) || data.length !== 4 * 2)) {
-                throw new GLError(ErrorKind.InvalidUniformData, { type: stringifyType(type), actualLength: 1, expectedLength: 4 * 2 });
-            }
-            gl["uniformMatrix4x2fv"](location, false, data as number[])
-        };
-        case 0x8b6a: return function (data) {
-            if (DEBUG && (!Array.isArray(data) || data.length !== 4 * 3)) {
-                throw new GLError(ErrorKind.InvalidUniformData, { type: stringifyType(type), actualLength: 1, expectedLength: 4 * 3 });
-            }
-            gl["uniformMatrix4x3fv"](location, false, data as number[])
-        };
-        case 0x8b5c: return function (data) {
-            if (DEBUG && (!Array.isArray(data) || data.length !== 4 * 4)) {
-                throw new GLError(ErrorKind.InvalidUniformData, { type: stringifyType(type), actualLength: 1, expectedLength: 4 * 4 });
-            }
-            gl["uniformMatrix4fv"](location, false, data as number[])
-        };
+        case 0x8b59:
+            typeInfo = ["array", 4, "uniform4iv"]; break;
+        case 0x1406:
+            typeInfo = ["scalar", 1, "uniform1f"]; break;
+        case 0x8b50:
+            typeInfo = ["array", 2, "uniform2fv"]; break;
+        case 0x8b51:
+            typeInfo = ["array", 3, "uniform3fv"]; break;
+        case 0x8b52:
+            typeInfo = ["array", 4, "uniform4fv"]; break;
+        case 0x8b55:
+            typeInfo = ["scalar", 1, "uniform1ui"]; break;
+        case 0x8dc6:
+            typeInfo = ["array", 2, "uniform2uiv"]; break;
+        case 0x8dc7:
+            typeInfo = ["array", 3, "uniform3uiv"]; break;
+        case 0x8dc8:
+            typeInfo = ["array", 4, "uniform4uiv"]; break;
+        case 0x8b57:
+            typeInfo = ["array", 2, "uniform2iv"]; break;
+        case 0x8b58:
+            typeInfo = ["array", 3, "uniform3iv"]; break;
+        case 0x8b59:
+            typeInfo = ["array", 4, "uniform4iv"]; break;
+        case 0x8b5a:
+            typeInfo = ["matrix", 2 * 2, "uniformMatrix2fv"]; break;
+        case 0x8b65:
+            typeInfo = ["matrix", 2 * 3, "uniformMatrix2x3fv"]; break;
+        case 0x8b66:
+            typeInfo = ["matrix", 2 * 4, "uniformMatrix2x4fv"]; break;
+        case 0x8b67:
+            typeInfo = ["matrix", 3 * 2, "uniformMatrix3x2fv"]; break;
+        case 0x8b5b:
+            typeInfo = ["matrix", 3 * 3, "uniformMatrix3fv"]; break;
+        case 0x8b68:
+            typeInfo = ["matrix", 3 * 4, "uniformMatrix3x4fv"]; break;
+        case 0x8b69:
+            typeInfo = ["matrix", 4 * 2, "uniformMatrix4x2fv"]; break;
+        case 0x8b6a:
+            typeInfo = ["matrix", 4 * 3, "uniformMatrix4x3fv"]; break;
+        case 0x8b5c:
+            typeInfo = ["matrix", 4 * 4, "uniformMatrix4fv"]; break;
         default: throw new GLError(ErrorKind.UnknownUniformType, { type });
+    }
+
+    const setter = typeInfo[2];
+    switch (typeInfo[0]) {
+        case "scalar": return function (data) {
+            if (DEBUG && typeof data !== "number") {
+                throw new GLError(ErrorKind.InvalidUniformData, { type: stringifyType(type), data });
+            }
+            // AFAIK, there is no good way to tell TypeScript that the key is definitely always keyof WebGL2RenderingContext 
+            // AND that the function has the right signature, without adding runtime checks, which NEED to be avoided in this case, 
+            // as this (uploading uniforms) is a hotpath
+            // @ts-ignore
+            gl[setter](location, data);
+        }
+        case "array": return function (data) {
+            if (DEBUG && (!Array.isArray(data) || data.length !== typeInfo[1])) {
+                throw new GLError(ErrorKind.InvalidUniformData, { type: stringifyType(type), data });
+            }
+            // @ts-ignore same as above
+            gl[setter](location, data);
+        }
+        case "matrix": return function (data) {
+            if (DEBUG && (!Array.isArray(data) || data.length !== typeInfo[1])) {
+                throw new GLError(ErrorKind.InvalidUniformData, { type: stringifyType(type), data });
+            }
+            // @ts-ignore same as above
+            gl[setter](location, false, data);
+        }
     }
 }
 
