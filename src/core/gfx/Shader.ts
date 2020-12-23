@@ -216,9 +216,8 @@ function createSetter(gl: WebGL2RenderingContext, /* shader: WebGLProgram,  */ty
     const setter = typeInfo[2];
     switch (typeInfo[0]) {
         case "scalar": return function (data) {
-            if (DEBUG && typeof data !== "number") {
+            if (DEBUG && typeof data !== "number")
                 throw new GLError(ErrorKind.InvalidUniformData, { type: stringifyType(type), data });
-            }
             // AFAIK, there is no good way to tell TypeScript that the key is definitely always keyof WebGL2RenderingContext 
             // AND that the function has the right signature, without adding runtime checks, which NEED to be avoided in this case, 
             // as this (uploading uniforms) is a hotpath
@@ -226,16 +225,14 @@ function createSetter(gl: WebGL2RenderingContext, /* shader: WebGLProgram,  */ty
             gl[setter](location, data);
         }
         case "array": return function (data) {
-            if (DEBUG && (!Array.isArray(data) || data.length !== typeInfo[1])) {
+            if (DEBUG && (!Array.isArray(data) || data.length !== typeInfo[1]))
                 throw new GLError(ErrorKind.InvalidUniformData, { type: stringifyType(type), data });
-            }
             // @ts-ignore same as above
             gl[setter](location, data);
         }
         case "matrix": return function (data) {
-            if (DEBUG && (!Array.isArray(data) || data.length !== typeInfo[1])) {
+            if (DEBUG && (!Array.isArray(data) || data.length !== typeInfo[1]))
                 throw new GLError(ErrorKind.InvalidUniformData, { type: stringifyType(type), data });
-            }
             // @ts-ignore same as above
             gl[setter](location, false, data);
         }

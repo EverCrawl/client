@@ -2,10 +2,11 @@
 declare global {
     interface String {
         hash(): number;
+        /* startsWith(it: string): boolean; */
     }
 }
 
-if (undefined === String.prototype.hash) {
+if (String.prototype.hash == null) {
     // Credit: https://github.com/garycourt/murmurhash-js
     window.String.prototype.hash = function (seed: number = 0) {
         let k1;
@@ -52,6 +53,15 @@ if (undefined === String.prototype.hash) {
         return seed >>> 0;
     }
 }
+
+/* if (String.prototype.startsWith == null) {
+    String.prototype.startsWith = function (it: string): boolean {
+        for (let i = 0, len = it.length; i < len; ++i) {
+            if (this[i] !== it[i]) return false;
+        }
+        return true;
+    }
+} */
 
 export function splitByUpperCase(value: string): string[] {
     const originalCase = value;

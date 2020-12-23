@@ -9,7 +9,7 @@ declare global {
     }
 }
 
-if (undefined === Array.prototype.equals) {
+if (Array.prototype.equals == null) {
     window.Array.prototype.equals = function <T>(this: Array<T>, that: Array<T>): boolean {
         if (this === that) return true;
         if (this == null || that == null) return false;
@@ -21,24 +21,24 @@ if (undefined === Array.prototype.equals) {
         return true;
     }
 }
-if (undefined === Array.prototype.front) {
+if (Array.prototype.front == null) {
     window.Array.prototype.front = function <T>(this: Array<T>): T | undefined {
         return this[0];
     }
 }
-if (undefined === Array.prototype.back) {
+if (Array.prototype.back == null) {
     window.Array.prototype.back = function <T>(this: Array<T>): T | undefined {
         return this[this.length - 1];
     }
 }
-if (undefined === Array.prototype.swap) {
+if (Array.prototype.swap == null) {
     window.Array.prototype.swap = function <T>(this: Array<T>, a: number, b: number): void {
         const temp = this[a];
         this[a] = this[b];
         this[b] = temp;
     }
 }
-if (undefined === Array.prototype.empty) {
+if (Array.prototype.empty == null) {
     window.Array.prototype.empty = function <T>(this: Array<T>): boolean {
         return this.length === 0;
     }

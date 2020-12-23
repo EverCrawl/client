@@ -3,27 +3,6 @@ import { SpriteRenderer } from "./Renderer";
 import { Texture, TextureKind } from "./Texture";
 import { Friend } from "core/utils";
 
-/**
- * Available animations
- */
-export type Animations =
-    | "Idle_Down"
-    | "Idle_DownLeft"
-    | "Idle_DownRight"
-    | "Idle_Left"
-    | "Idle_Right"
-    | "Idle_Up"
-    | "Idle_UpLeft"
-    | "Idle_UpRight"
-    | "Walk_Down"
-    | "Walk_DownLeft"
-    | "Walk_DownRight"
-    | "Walk_Left"
-    | "Walk_Right"
-    | "Walk_Up"
-    | "Walk_UpLeft"
-    | "Walk_UpRight"
-
 /*
 TO ADD A NEW ANIMATION:
 
@@ -36,6 +15,111 @@ So it's valid to check if an animation has finished.
 
 TODO(?): add callbacks for animation start/end
 */
+
+type Sprite_Friend = Friend<Sprite, {
+    getAnimation(): string | null;
+    setAnimation(value: string): void;
+}>;
+
+export class State {
+    moving: boolean = false;
+    direction: number = 0;
+    lastDirection: number = 0;
+    lastAnimation: string = "";
+}
+
+export const enum Direction {
+    Up = 1 << 0,
+    Down = 1 << 1,
+    Left = 1 << 2,
+    Right = 1 << 3
+};
+
+export class Sprite {
+    private spritesheet: Spritesheet_Friend;
+
+    // current animation
+    animation: string;
+    private frameIndex: number;
+    private lastAnimationStep: number;
+
+    // determines next animation
+    private lastAnimation: string;
+    direction: Direction;
+    private lastDirection: Direction;
+    moving: boolean;
+
+    constructor(
+        spritesheet: Spritesheet,
+    ) {
+        this.spritesheet = spritesheet as unknown as Spritesheet_Friend;
+        this.animation = "Idle_Down";
+        this.lastAnimation = "Idle_Down";
+        this.direction = 0;
+        this.lastDirection = Direction.Down;
+        this.moving = false;
+
+        this.frameIndex = 0;
+        this.lastAnimationStep = Date.now();
+    }
+
+    get animations(): { [name: string]: AnimationDesc } | null {
+        return this.spritesheet.animations;
+    }
+
+    get width() {
+        return (this.spritesheet.maxSize?.w ?? 0) / 2;
+    }
+
+    get height() {
+        return (this.spritesheet.maxSize?.h ?? 0) / 2;
+    }
+
+    update() {
+        if (this.moving && (this.lastDirection != this.direction)) {
+            this.lastDirection = this.direction;
+        }
+
+        let animation = `${this.moving ? "Walk_" : "Idle_"}`;
+        if (this.lastDirection & Direction.Up) animation += "Up";
+        else if (this.lastDirection & Direction.Down) animation += "Down";
+        if (this.lastDirection & Direction.Left) animation += "Left";
+        else if (this.lastDirection & Direction.Right) animation += "Right";
+
+        if (animation != this.lastAnimation) {
+            this.animation = animation;
+            this.frameIndex = 0;
+            this.lastAnimationStep = Date.now();
+        }
+        this.lastAnimation = animation;
+    }
+
+    draw(renderer: SpriteRenderer, layer: number, pos: Vector2 = [0, 0], rot: number = 0, scale: Vector2 = [1, 1]) {
+        if (!this.spritesheet.loaded_) return;
+
+        const anim = this.spritesheet.animations![this.animation];
+        if (!anim) return;
+        console.log(anim);
+
+        const now = Date.now();
+        if (now - this.lastAnimationStep > anim.frames[this.frameIndex].delay) {
+            this.lastAnimationStep = now;
+            this.frameIndex = (this.frameIndex + 1) % anim.frames.length;
+        }
+
+        for (const spriteLayer of Object.keys(this.spritesheet.layers!)) {
+            const anim = this.spritesheet.layers![spriteLayer][this.animation];
+            if (!anim) continue;
+
+            const uv = anim.frames[this.frameIndex].uv;
+            const size = anim.frames[this.frameIndex].size;
+            renderer.draw(this.spritesheet.texture!, layer,
+                [uv.x, uv.y], [uv.w, uv.h],
+                [pos[0], pos[1] - size.h / 2], rot, [size.w * scale[0], size.h * scale[1]]);
+        }
+    }
+}
+
 
 interface Size {
     w: number, h: number;
@@ -67,157 +151,6 @@ interface FrameDesc {
 interface AnimationDesc {
     frames: FrameDesc[];
     duration: number;
-}
-
-// Transitions are hardcoded.
-const transitions: { [nodeA: string]: { [nodeB: string]: /* edge */ string } } = {
-    /* "Idle": {
-        "Jump": "JumpStart"
-    }, */
-    /* "Jump": {
-        "Idle": "JumpEnd",
-        "Move": "JumpEnd"
-    }, */
-    /* "Move": {
-        "Jump": "JumpStart"
-    } */
-};
-
-class AnimationState<T extends string> {
-
-    lastState: T;
-    state: T;
-    transitionStart = Date.now();
-    transitioned = true;
-
-    constructor(
-        public animations: { [name: string]: AnimationDesc },
-        public defaultState: T,
-        public sprite: Sprite_Friend
-    ) {
-        this.lastState = defaultState;
-        this.state = defaultState;
-        this.sprite.setAnimation(defaultState);
-    }
-
-    set(name: T) {
-        this.lastState = this.state;
-        this.state = name;
-        this.transitioned = transitions[this.lastState]?.[name] === undefined;
-    }
-
-    get() {
-        return this.state;
-    }
-
-    update() {
-        if (this.lastState !== this.state) {
-            const transition = transitions[this.lastState]?.[this.state];
-            const transitionInfo = this.animations[transition];
-            if (transition && !this.transitioned) {
-                if (this.sprite.getAnimation() !== transition) {
-                    this.sprite.setAnimation(transition);
-                    this.transitionStart = Date.now();
-                }
-                // magic constant - skip about one update, otherwise animation repeats which we don't want
-                // TODO: do this in a more robust way by setting a flag to prevent this animation from repeating
-                if (Date.now() + 16 - this.transitionStart >= (transitionInfo!.duration)) {
-                    // transition ended, next frame we will switch to idle anim
-                    this.transitioned = true;
-                }
-            } else {
-                this.sprite.setAnimation(this.state);
-                this.lastState = this.state;
-            }
-        }
-    }
-}
-
-type Sprite_Friend = Friend<Sprite, {
-    getAnimation(): string | null;
-    setAnimation(value: string): void;
-}>;
-
-export class Sprite {
-    private spritesheet: Spritesheet_Friend;
-
-    private animation_: string;
-    private frameIndex: number;
-    private lastAnimationStep: number;
-    private animationState: AnimationState<Animations> | null;
-
-    constructor(
-        spritesheet: Spritesheet,
-    ) {
-        this.spritesheet = spritesheet as unknown as Spritesheet_Friend;
-        this.animation_ = "";
-        this.frameIndex = 0;
-        this.lastAnimationStep = Date.now();
-        this.animationState = null;
-    }
-
-    get animations(): { [name: string]: AnimationDesc } | null {
-        return this.spritesheet.animations;
-    }
-
-    private getAnimation() {
-        return this.animation_;
-    }
-
-    private setAnimation(value: string) {
-        this.animation_ = value;
-        this.frameIndex = 0;
-        this.lastAnimationStep = Date.now();
-    }
-
-    animate(name: Animations) {
-        this.animationState?.set(name);
-    }
-
-    set animation(value: Animations | undefined) {
-        this.animationState?.set(value ?? "Idle_Down");
-    }
-
-    get animation() {
-        return this.animationState?.get();
-    }
-
-    get width() {
-        return (this.spritesheet.maxSize?.w ?? 0) / 2;
-    }
-
-    get height() {
-        return (this.spritesheet.maxSize?.h ?? 0) / 2;
-    }
-
-    draw(renderer: SpriteRenderer, layer: number, pos: Vector2 = [0, 0], rot: number = 0, scale: Vector2 = [1, 1]) {
-        if (!this.spritesheet.loaded_) return;
-
-        if (!this.animationState) {
-            this.animationState = new AnimationState(this.spritesheet.animations!, "Idle_Down", this as unknown as Sprite_Friend);
-        }
-        this.animationState.update();
-
-        const anim = this.spritesheet.animations![this.animation_];
-        if (!anim) return;
-
-        const now = Date.now();
-        if (now - this.lastAnimationStep > anim.frames[this.frameIndex].delay) {
-            this.lastAnimationStep = now;
-            this.frameIndex = (this.frameIndex + 1) % anim.frames.length;
-        }
-
-        for (const spriteLayer of Object.keys(this.spritesheet.layers!)) {
-            const anim = this.spritesheet.layers![spriteLayer][this.animation_];
-            if (!anim) continue;
-
-            const uv = anim.frames[this.frameIndex].uv;
-            const size = anim.frames[this.frameIndex].size;
-            renderer.draw(this.spritesheet.texture!, layer,
-                [uv.x, uv.y], [uv.w, uv.h],
-                [pos[0], pos[1] - size.h / 2], rot, [size.w * scale[0], size.h * scale[1]]);
-        }
-    }
 }
 
 interface Spritesheet_Friend {
@@ -268,10 +201,8 @@ export class Spritesheet {
         this.layers = transformed.layers;
         this.texture = Texture.create(this.gl, TextureKind.Image2D, { path: transformed.spritesheet, mipmap: false });
         this.maxSize = transformed.maxSize;
-
-        console.log(this);
-
         this.loaded_ = true;
+        console.log(`finished loading ${this.path}`, this);
     }
 }
 

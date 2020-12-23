@@ -13,12 +13,8 @@ export default class App extends Component {
         if (!this.canvasRef.current) throw new Error(`Something went wrong.`);
         if (!this.overlayRef.current) throw new Error(`Something went wrong.`);
 
-        try {
-            const game = new Game(this.canvasRef.current, this.overlayRef.current);
-            game.run();
-        } catch (err) {
-            console.error(err);
-        }
+        const game = new Game(this.canvasRef.current, this.overlayRef.current);
+        game.run();
     }
 
     render() {

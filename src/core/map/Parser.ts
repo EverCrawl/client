@@ -235,7 +235,6 @@ function parseObjectGroups(objectgroups: Element[]): Tiled.ObjectGroup[] {
 export class TiledParser {
     private static parser_ = new DOMParser();
     static parse(src: string): Tiled.TileMap {
-        console.time("parsing");
         const xml: XMLDocument = TiledParser.parser_.parseFromString(src, "text/xml");
 
         const map = getChildrenByTagName(xml, "map")[0];
@@ -251,7 +250,6 @@ export class TiledParser {
         result.objectgroups = parseObjectGroups(getChildrenByTagName(map, "objectgroup"));
 
         // safe because many assertions when parsing
-        console.timeEnd("parsing");
         return result as Tiled.TileMap;
     }
 }

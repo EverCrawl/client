@@ -1,3 +1,3 @@
 
-export * from "./State";
 export * from "./Game";
+export * from "./World";

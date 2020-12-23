@@ -178,7 +178,7 @@ export class TileMap {
             }
 
             TileMap.cache.set(path, this);
-            console.log("finished loading:", path);
+            console.log(`finished loading ${path}`, this);
         })();
     }
 
