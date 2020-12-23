@@ -92,6 +92,7 @@ export class Texture {
                 if (!img) {
                     img = new Image();
                     img.src = path;
+                    Texture.imageCache.set(path, img);
                 }
             } break;
             case TextureKind.Atlas: {
@@ -100,6 +101,7 @@ export class Texture {
                 if (!img) {
                     img = new Image();
                     img.src = path;
+                    Texture.imageCache.set(path, img);
                 }
             } break;
             case TextureKind.Buffer: {

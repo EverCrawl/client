@@ -185,9 +185,12 @@ export class Spritesheet {
         this.loaded_ = false;
 
         if (Spritesheet.cache.has(path)) return Spritesheet.cache.get(path)!;
-        else fetch(path)
-            .then(it => it.json())
-            .then(it => (this.load(it), Spritesheet.cache.set(path, this)));
+        else {
+            fetch(path)
+                .then(it => it.json())
+                .then(it => this.load(it));
+            Spritesheet.cache.set(path, this)
+        }
     }
 
     get ready() {
