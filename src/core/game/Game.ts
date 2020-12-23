@@ -16,6 +16,7 @@ TODO: join renderers into just one
 TODO: swept AABB
 TODO: (game server) collisions
 TODO: loading screen
+TODO: UI
 TODO(?): node.js auth/social server
 TODO: (game server) DB access
 TODO: (auth + game servers) authentication with DB

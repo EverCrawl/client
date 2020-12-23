@@ -506,8 +506,6 @@ void main()
         const sizeof_point = (4 * 2) + (4 * 3);
         const bufferSize = sizeof_point * this.options.maxPoints;
 
-        console.log(sizeof_point, bufferSize);
-
         this.buffer = {
             cpu: [],
             gpu: Buffer.dynamic(this.gl, bufferSize, this.gl.ARRAY_BUFFER)
@@ -518,8 +516,6 @@ void main()
                 { location: 1, arraySize: 3, baseType: this.gl.FLOAT, normalized: false },
             ]
         }]);
-
-        console.log(this);
     }
 
     /**

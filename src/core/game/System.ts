@@ -3,6 +3,7 @@ import { ECS, Input } from "core";
 import { Sprite, Direction } from "core/gfx";
 import { TileMap } from "core/map";
 import { aabb_aabb, v2 } from 'core/math';
+import { Socket } from 'core/net';
 
 export function input_update(registry: ECS.Registry, [speed, velocity]: [Speed, Velocity]) {
     let deltaV = speed.value;
@@ -17,6 +18,14 @@ export function input_update(registry: ECS.Registry, [speed, velocity]: [Speed, 
     if (Math.abs(velocity.value[0]) === Math.abs(velocity.value[1])) {
         velocity.value[0] /= Math.SQRT2;
         velocity.value[1] /= Math.SQRT2;
+    }
+}
+
+export function network_update(registry: ECS.Registry, socket: Socket) {
+    if (!socket.empty) {
+        for (const packet of socket.readAll()) {
+            console.log(packet);
+        }
     }
 }
 

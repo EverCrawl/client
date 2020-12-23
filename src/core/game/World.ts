@@ -2,18 +2,21 @@ import { ECS } from "core";
 import { Camera, LineRenderer, PointRenderer, Sprite, SpriteRenderer, Spritesheet, TileRenderer } from "core/gfx";
 import { TileMap } from "core/map";
 import { AABB, v2, Vector2 } from "core/math";
+import { Socket } from "core/net";
 import { Collider, Position, Speed, Velocity } from "./Component";
-import { animation_update, input_update, collision_update, physics_update } from "./System";
+import { animation_update, input_update, collision_update, physics_update, network_update } from "./System";
 
 export class World {
     tilemap?: TileMap;
     registry: ECS.Registry;
+    socket: Socket;
     player: ECS.Entity;
 
     constructor(
         public gl: WebGL2RenderingContext
     ) {
         this.registry = new ECS.Registry();
+        this.socket = new Socket("127.0.0.1:8000", "test");
         this.player = Player.create(this.registry, this.gl, "sprites/character.json");
 
         //@ts-ignore
@@ -24,6 +27,7 @@ export class World {
         input_update(this.registry, [
             this.registry.get(this.player, Speed)!,
             this.registry.get(this.player, Velocity)!]);
+        network_update(this.registry, this.socket);
         physics_update(this.registry);
         collision_update(this.registry, this.tilemap);
         animation_update(this.registry);

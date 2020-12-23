@@ -99,7 +99,6 @@ export class Sprite {
 
         const anim = this.spritesheet.animations![this.animation];
         if (!anim) return;
-        console.log(anim);
 
         const now = Date.now();
         if (now - this.lastAnimationStep > anim.frames[this.frameIndex].delay) {
