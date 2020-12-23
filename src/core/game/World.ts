@@ -19,6 +19,15 @@ export class World {
         this.socket = new Socket("127.0.0.1:8000", "test");
         this.player = Player.create(this.registry, this.gl, "sprites/character.json");
 
+        // TEMP: create some random players in the world
+        const range = 8 * 32;
+        for (let i = 0; i < 10; ++i) {
+            const x = -range + (Math.random() * range);
+            const y = -range + (Math.random() * range);
+            console.log(x, y);
+            Player.create(this.registry, this.gl, "sprites/character.json", v2(x, y));
+        }
+
         //@ts-ignore
         window.World = this;
     }
@@ -45,30 +54,30 @@ export class World {
     ) {
         this.gl.clear(this.gl.COLOR_BUFFER_BIT);
 
-        // tilemap offset is the opposite of the player's position
-        // e.g. if we're moving right (+x), the tilemap should move left (-x)
-        // to create the illusion of the same movement
-        const tilemapOffset = v2.negate(this.registry.get(this.player, Position)!.get(frameTime));
+        // world offset is the opposite of the player's position
+        // e.g. if we're moving right (+x), the world should move left (-x)
+        // to create the illusion of the player moving
+        const worldOffset = v2.negate(this.registry.get(this.player, Position)!.get(frameTime));
 
         if (this.tilemap) {
             renderer.tile.begin(camera);
-            this.tilemap.draw(renderer.tile, tilemapOffset);
+            this.tilemap.draw(renderer.tile, worldOffset);
             renderer.tile.end();
         }
 
         renderer.sprite.begin(camera);
         for (const [entity, sprite, position] of this.registry.view(Sprite, Position)) {
-            // we always want to draw player at [0, 0] (center of viewport)
-            if (entity === this.player) {
-                sprite.draw(renderer.sprite, 0);
-            } else {
-                const interpolatedPosition = position.get(frameTime);
-                sprite.draw(renderer.sprite, 0, v2(
-                    tilemapOffset[0] + interpolatedPosition[0],
-                    tilemapOffset[1] + interpolatedPosition[1]
-                ));
-            }
+            // player is drawn separately after every other sprite
+            if (entity === this.player) continue;
+
+            const interpolatedPosition = position.get(frameTime);
+            sprite.draw(renderer.sprite, 0, v2(
+                worldOffset[0] + interpolatedPosition[0],
+                worldOffset[1] + interpolatedPosition[1]
+            ));
         }
+        const playerSprite = this.registry.get(this.player, Sprite)!;
+        playerSprite.draw(renderer.sprite, 0);
         renderer.sprite.end();
     }
 }
@@ -81,10 +90,10 @@ export namespace Player {
         position: Vector2 = v2()
     ) {
         const entity = registry.create();
-        // add Sprite, Collider, Position, Speed, Velocity
+        // players consist of a Sprite, Collider, Position, Speed and Velocity
         registry.emplace(entity, new Sprite(new Spritesheet(gl, sprite)));
         registry.emplace(entity, new Collider(new AABB(v2(), v2(8, 8))));
-        registry.emplace(entity, new Position());
+        registry.emplace(entity, new Position(position));
         registry.emplace(entity, new Speed(2));
         registry.emplace(entity, new Velocity(v2()));
         return entity;
