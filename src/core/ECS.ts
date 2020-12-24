@@ -25,6 +25,9 @@ export type View<Types extends Component[]> = Iterable<[Entity, ...Types]>;
 
 export const Null: Entity = -1 >>> 0;
 
+interface TypeList<T> { [key: string]: T };
+interface Storage<T> { [key: number]: T };
+
 /**
  * Registry holds all components in arrays
  *
@@ -33,7 +36,7 @@ export const Null: Entity = -1 >>> 0;
 export class Registry {
     private entitySequence: Entity = 0 >>> 0;
     private entities: Set<Entity> = new Set;
-    private components: Map<string, Map<Entity, Component>> = new Map;
+    private components: TypeList<Storage<Component>> = {};
 
     // TODO: store entities and components by archetype
 
@@ -73,17 +76,23 @@ export class Registry {
     /**
      * Destroys an entity and all its components
      * 
-     * Calls `.free()` on each destroyed component
+     * Calls `.free()` (if available) on each destroyed component
      * 
      * Example:
+     * ```
+     *  class A { free() { console.log("A freed"); } }
+     *  const registry = new Registry();
+     *  const entity = registry.create();
+     *  registry.emplace(entity, new A);
+     *  registry.destroy(entity); // logs "A freed"
      * ```
      */
     destroy(entity: Entity) {
         this.entities.delete(entity);
-        for (const list of this.components.values()) {
-            const component = list.get(entity);
+        for (const storage of Object.values(this.components)) {
+            const component = storage[entity];
             if (component?.free) component.free();
-            list.delete(entity);
+            delete storage[entity];
         }
     }
 
@@ -100,7 +109,7 @@ export class Registry {
      *  const component = registry.get(entity, Component);
      * ```
      */
-    get<T extends Component>(entity: Entity, component: Constructor<T>): T | null {
+    get<T extends Component>(entity: Entity, component: Constructor<T>): T | undefined {
         const type = TypeOf(component);
 
         // can't get for "dead" entity
@@ -108,7 +117,9 @@ export class Registry {
             throw new Error(`Cannot get component "${TypeOf(component)}" for dead entity ID ${entity}`);
         }
 
-        return this.components.get(type)?.get(entity) as T ?? null;
+        const storage = this.components[type];
+        if (storage == null) return undefined;
+        return storage[entity] as T | undefined;
     }
 
     /**
@@ -123,8 +134,10 @@ export class Registry {
      *  registry.has(entity, Component); // true
      * ```
      */
-    has<T extends Component>(entity: Entity, component: Constructor<T>) {
-        return this.components.get(TypeOf(component))?.has(entity) ?? false;
+    has<T extends Component>(entity: Entity, component: Constructor<T>): boolean {
+        const type = TypeOf(component);
+        const storage = this.components[type];
+        return storage != null && storage[entity] != null;
     }
 
     /**
@@ -146,12 +159,9 @@ export class Registry {
             throw new Error(`Cannot set component "${TypeOf(component)}" for dead entity ID ${entity}`);
         }
 
-        let list = this.components.get(type);
-        if (list == null) {
-            list = new Map();
-            this.components.set(type, list);
-        }
-        list.set(entity, component);
+        const storage = this.components[type];
+        if (storage == null) this.components[type] = {};
+        this.components[type][entity] = component;
     }
 
     /**
@@ -166,7 +176,7 @@ export class Registry {
      *  registry.remove(entity, Component); // true
      * ```
      */
-    remove<T extends Component>(entity: Entity, component: Constructor<T>): T | null {
+    remove<T extends Component>(entity: Entity, component: Constructor<T>): T | undefined {
         const type = TypeOf(component);
 
         // can't remove for "dead" entity
@@ -174,13 +184,11 @@ export class Registry {
             throw new Error(`Cannot remove component "${TypeOf(component)}" for dead entity ID ${entity}`);
         }
 
-        const list = this.components.get(type);
-        if (list == null) {
-            return null;
-        }
-        const _component = list?.get(entity);
-        list.delete(entity);
-        return _component as T ?? null;
+        const storage = this.components[type];
+        if (storage == null) return undefined;
+        const out = this.components[type][entity] as T | undefined;
+        delete this.components[type][entity];
+        return out;
     }
 
     /**
@@ -258,17 +266,41 @@ export class Registry {
             const item: [Entity, ...Component[]] = [entity];
 
             for (const type of types) {
-                const _type = TypeOf(type);
-                const list = self.components.get(_type);
+                const typeName = TypeOf(type);
+                const list = self.components[typeName];
                 if (!list) continue nextEntity;
 
-                const component = list.get(entity);
-                if (!component) continue nextEntity;
+                const component = list[entity];
+                if (!component) break;
 
                 item.push(component);
             }
 
             yield item;
         }
+    }
+}
+
+export type ComponentView<T extends Constructor<Component>[]> = (registry: Registry, callback: (entity: Entity, ...components: InstanceTypeTuple<T>) => void) => void;
+export abstract class Preprocessor {
+    static generateView<T extends Constructor<Component>[]>(...types: T): ComponentView<T> {
+        let variables = "";
+        const varNames: string[] = [];
+        for (let i = 0; i < types.length; ++i) {
+            const typeName = types[i].name;
+            const varName = `_mnc${typeName}_${i}__`;
+            varNames.push(varName);
+            variables +=
+                `const ${varName} = registry.components["${typeName}"][entity];
+    if (!${varName}) continue nextEntity;
+    `;
+        }
+
+        return new Function("registry", "CALLBACK", `
+    nextEntity: for(const entity of registry.entities.values()) {
+    ${variables}
+    CALLBACK(entity, ${varNames.join(",")});
+    }
+    `) as any;
     }
 }
