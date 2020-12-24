@@ -4,30 +4,16 @@
 import { createBuffer } from "./Common";
 import { ErrorKind, GLError } from "./Error";
 
-interface TypedArrayInfo {
-    type: number;
-    typeName: string;
-    elementSize: number;
+// convenience 
+export type StaticBuffer = Buffer<BufferType.Static>;
+export type DynamicBuffer = Buffer<BufferType.Dynamic>;
+
+export const enum BufferType {
+    Static,
+    Dynamic
 }
 
-function getTypedArrayInfo(array: ArrayBufferView | ArrayBuffer): TypedArrayInfo {
-    switch (true) {
-        case array instanceof ArrayBuffer: return { type: 0x1400, typeName: "Byte", elementSize: 1 };
-        case array instanceof Uint8Array: return { type: 0x1405, typeName: "Uint8", elementSize: 1 };
-        case array instanceof Uint16Array: return { type: 0x1405, typeName: "Uint16", elementSize: 2 };
-        case array instanceof Uint32Array: return { type: 0x1405, typeName: "Uint32", elementSize: 4 };
-        case array instanceof Int8Array: return { type: 0x1404, typeName: "Int8", elementSize: 1 };
-        case array instanceof Int16Array: return { type: 0x1404, typeName: "Int16", elementSize: 2 };
-        case array instanceof Int32Array: return { type: 0x1404, typeName: "Int32", elementSize: 4 };
-        case array instanceof Float32Array: return { type: 0x1406, typeName: "Float32", elementSize: 4 };
-        default: throw new GLError(ErrorKind.UnknownArrayType, { type: array.constructor.name.slice(0, array.constructor.name.length - "Array".length) });
-    }
-}
-
-export type StaticBuffer = Buffer<"static">;
-export type DynamicBuffer = Buffer<"dynamic">;
-
-export class Buffer<Type extends "static" | "dynamic"> {
+export class Buffer<Type extends BufferType> {
 
     private byteLength_: number;
     private info_: TypedArrayInfo | undefined;
@@ -37,7 +23,7 @@ export class Buffer<Type extends "static" | "dynamic"> {
         public readonly target: GLenum,
         public readonly usage: GLenum,
         byteLength: number,
-        info: Type extends "static" ? TypedArrayInfo : TypedArrayInfo | undefined
+        info: Type extends BufferType.Static ? TypedArrayInfo : TypedArrayInfo | undefined
     ) {
         this.byteLength_ = byteLength;
         this.info_ = info;
@@ -60,8 +46,9 @@ export class Buffer<Type extends "static" | "dynamic"> {
     }
 
     upload(data: ArrayBufferView | ArrayBuffer, dstOffset = -1) {
-        if (DEBUG && this.usage === GL.STATIC_DRAW)
+        if (DEBUG && this.usage === GL.STATIC_DRAW) {
             throw new Error(`Attempted to overwrite static buffer`);
+        }
 
         this.info_ = getTypedArrayInfo(data);
 
@@ -69,8 +56,12 @@ export class Buffer<Type extends "static" | "dynamic"> {
         if (dstOffset === -1) {
             GL.bufferData(this.target, data, this.usage);
         } else {
-            if (DEBUG && this.byteLength_ < dstOffset + data.byteLength)
+            if (DEBUG && dstOffset < 0) {
+                throw new Error(`Negative buffer dstOffset (${dstOffset}) is invalid`);
+            }
+            if (DEBUG && this.byteLength_ < dstOffset + data.byteLength) {
                 throw new Error(`Buffer overflow: ${dstOffset + data.byteLength}/${this.byteLength_}`);
+            }
             GL.bufferSubData(this.target, dstOffset, data);
         }
         this.unbind();
@@ -89,7 +80,7 @@ export class Buffer<Type extends "static" | "dynamic"> {
         const byteLength = data.byteLength;
         const info = getTypedArrayInfo(data);
 
-        return new Buffer<"static">(handle, target, GL.STATIC_DRAW, byteLength, info);
+        return new Buffer<BufferType.Static>(handle, target, GL.STATIC_DRAW, byteLength, info);
     }
 
     static dynamic(
@@ -113,6 +104,26 @@ export class Buffer<Type extends "static" | "dynamic"> {
             GL.bindBuffer(target, null);
         }
 
-        return new Buffer<"dynamic">(handle, target, GL.DYNAMIC_DRAW, byteLength, info);
+        return new Buffer<BufferType.Dynamic>(handle, target, GL.DYNAMIC_DRAW, byteLength, info);
+    }
+}
+
+interface TypedArrayInfo {
+    type: number;
+    typeName: string;
+    elementSize: number;
+}
+
+function getTypedArrayInfo(array: ArrayBufferView | ArrayBuffer): TypedArrayInfo {
+    switch (true) {
+        case array instanceof ArrayBuffer: return { type: 0x1400, typeName: "Byte", elementSize: 1 };
+        case array instanceof Uint8Array: return { type: 0x1405, typeName: "Uint8", elementSize: 1 };
+        case array instanceof Uint16Array: return { type: 0x1405, typeName: "Uint16", elementSize: 2 };
+        case array instanceof Uint32Array: return { type: 0x1405, typeName: "Uint32", elementSize: 4 };
+        case array instanceof Int8Array: return { type: 0x1404, typeName: "Int8", elementSize: 1 };
+        case array instanceof Int16Array: return { type: 0x1404, typeName: "Int16", elementSize: 2 };
+        case array instanceof Int32Array: return { type: 0x1404, typeName: "Int32", elementSize: 4 };
+        case array instanceof Float32Array: return { type: 0x1406, typeName: "Float32", elementSize: 4 };
+        default: throw new GLError(ErrorKind.UnknownArrayType, { type: array.constructor.name.slice(0, array.constructor.name.length - "Array".length) });
     }
 }
