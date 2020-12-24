@@ -1,5 +1,5 @@
-import { Vector2 } from "core/math";
-import { SpriteRenderer } from "./Renderer";
+import { v2, Vector2 } from "core/math";
+import { Renderer } from "./Renderer";
 import { Texture, TextureKind } from "./Texture";
 import { Friend } from "core/utils";
 
@@ -94,7 +94,7 @@ export class Sprite {
         this.lastAnimation = animation;
     }
 
-    draw(renderer: SpriteRenderer, layer: number, pos: Vector2 = [0, 0], rot: number = 0, scale: Vector2 = [1, 1]) {
+    draw(renderer: Renderer, layer: number, pos = v2(), rot = 0, scale = v2(1, 1)) {
         if (!this.spritesheet.loaded_) return;
 
         const anim = this.spritesheet.animations![this.animation];
@@ -112,7 +112,7 @@ export class Sprite {
 
             const uv = anim.frames[this.frameIndex].uv;
             const size = anim.frames[this.frameIndex].size;
-            renderer.draw(this.spritesheet.texture!, layer,
+            renderer.command.quad(this.spritesheet.texture!, layer,
                 [uv.x, uv.y], [uv.w, uv.h],
                 [pos[0], pos[1] - size.h / 2], rot, [size.w * scale[0], size.h * scale[1]]);
         }

@@ -1,5 +1,5 @@
 import { ECS } from "core";
-import { Camera, LineRenderer, PointRenderer, Sprite, SpriteRenderer, Spritesheet, TileRenderer } from "core/gfx";
+import { Camera, Renderer, Sprite, Spritesheet } from "core/gfx";
 import { TileMap } from "core/map";
 import { AABB, v2, Vector2 } from "core/math";
 import { Socket } from "core/net";
@@ -18,10 +18,10 @@ export class World {
         this.player = Player.create(this.registry, "sprites/character.json");
 
         // TEMP: create some random players in the world
-        const range = 8 * 32;
+        const range = 16 * 32;
         for (let i = 0; i < 10; ++i) {
-            const x = -range + (Math.random() * range);
-            const y = -range + (Math.random() * range);
+            const x = (Math.random() * range) - range / 2;
+            const y = (Math.random() * range) - range / 2;
             console.log(x, y);
             Player.create(this.registry, "sprites/character.json", v2(x, y));
         }
@@ -41,42 +41,37 @@ export class World {
     }
 
     draw(
-        renderer: {
-            sprite: SpriteRenderer,
-            tile: TileRenderer,
-            line: LineRenderer,
-            point: PointRenderer
-        },
+        renderer: Renderer,
         camera: Camera,
         frameTime: number
     ) {
-        GL.clear(GL.COLOR_BUFFER_BIT);
-
+        renderer.camera = camera;
         // world offset is the opposite of the player's position
         // e.g. if we're moving right (+x), the world should move left (-x)
         // to create the illusion of the player moving
         const worldOffset = v2.negate(this.registry.get(this.player, Position)!.get(frameTime));
 
         if (this.tilemap) {
-            renderer.tile.begin(camera);
-            this.tilemap.draw(renderer.tile, worldOffset);
-            renderer.tile.end();
+            this.tilemap.draw(renderer, worldOffset);
         }
 
-        renderer.sprite.begin(camera);
+        // TODO: convert to preprocessed view
+        // draw all sprites except for player
         for (const [entity, sprite, position] of this.registry.view(Sprite, Position)) {
-            // player is drawn separately after every other sprite
             if (entity === this.player) continue;
 
             const interpolatedPosition = position.get(frameTime);
-            sprite.draw(renderer.sprite, 0, v2(
+            sprite.draw(renderer, 0, v2(
                 worldOffset[0] + interpolatedPosition[0],
                 worldOffset[1] + interpolatedPosition[1]
             ));
         }
+
+        // draw player
         const playerSprite = this.registry.get(this.player, Sprite)!;
-        playerSprite.draw(renderer.sprite, 0);
-        renderer.sprite.end();
+        playerSprite.draw(renderer, 0);
+
+        renderer.flush();
     }
 }
 

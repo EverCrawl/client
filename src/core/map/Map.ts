@@ -1,5 +1,5 @@
 
-import { Texture, TextureKind, TileRenderer } from "core/gfx";
+import { Renderer, Texture, TextureKind } from "core/gfx";
 import { AABB, v2, Vector2 } from "core/math";
 import { parseBool } from "core/utils";
 import { TiledParser } from "./Parser";
@@ -181,14 +181,14 @@ export class TileMap {
         })();
     }
 
-    private drawChunk(renderer: TileRenderer, position = v2(), lid: number, chunk: Tiled.LayerDataChunk) {
+    private drawChunk(renderer: Renderer, position = v2(), lid: number, chunk: Tiled.LayerDataChunk) {
         for (let y = 0; y < chunk.height; ++y) {
             for (let x = 0; x < chunk.width; ++x) {
                 const tile = chunk.tiles[x + y * chunk.width];
                 if (tile == null) continue;
 
                 // TODO: multiple tilesets
-                renderer.draw(this.tilesets[0], lid,
+                renderer.command.tile(this.tilesets[0], lid,
                     tile.id,
                     v2(position[0] + x * 32, position[1] + y * 32),
                     0,
@@ -197,7 +197,7 @@ export class TileMap {
         }
     }
 
-    draw(renderer: TileRenderer, position = v2()) {
+    draw(renderer: Renderer, position = v2()) {
         let layer_id = -5;
         for (const layer of this.layers) {
             for (const chunk of layer.chunks) {
@@ -207,8 +207,7 @@ export class TileMap {
                         position[1] + chunk.y * 32
                     ),
                     layer_id++,
-                    chunk
-                );
+                    chunk);
             }
         }
     }

@@ -1,7 +1,6 @@
 import OverlayContainer from "app/Overlay";
 import * as Core from "core";
 import { v2, Vector2, Matrix3, m3, World } from "core";
-import { LineRenderer, PointRenderer } from "core/gfx";
 import { AABB, aabb_aabb, v3, v4, Vector3, Vector4 } from "core/math";
 import { Socket } from "core/net";
 
@@ -31,12 +30,7 @@ export class Game {
 
     viewport: Core.Viewport;
     camera: Core.Camera;
-    renderer: {
-        sprite: Core.SpriteRenderer
-        tile: Core.TileRenderer
-        line: Core.LineRenderer
-        point: Core.PointRenderer
-    }
+    renderer: Core.Renderer;
 
     world: World;
 
@@ -54,12 +48,7 @@ export class Game {
         });
         this.viewport = new Core.Viewport();
         this.camera = new Core.Camera(this.viewport);
-        this.renderer = {
-            sprite: new Core.SpriteRenderer(),
-            tile: new Core.TileRenderer(),
-            line: new Core.LineRenderer(),
-            point: new Core.PointRenderer()
-        };
+        this.renderer = new Core.Renderer();
 
         this.world = new World();
         // TEMP
