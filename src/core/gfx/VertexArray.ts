@@ -1,5 +1,5 @@
 
-import { Buffer } from "./Buffer";
+import { Buffer, BufferType } from "./Buffer";
 import { createVertexArray } from "./Common";
 import { ErrorKind, GLError } from "./Error";
 
@@ -48,7 +48,7 @@ export class VertexArray {
     public readonly handle: WebGLVertexArrayObject;
 
     constructor(
-        private buffers: { buffer: Buffer<"static" | "dynamic">, descriptors: BufferDescriptor[] }[]
+        private buffers: { buffer: Buffer<BufferType.Static | BufferType.Dynamic>, descriptors: BufferDescriptor[] }[]
     ) {
         this.id = VertexArray.ID_SEQUENCE++;
         this.handle = createVertexArray();

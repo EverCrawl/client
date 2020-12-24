@@ -4,11 +4,9 @@ import { Texture, TextureKind } from "./Texture";
 import { Friend } from "core/utils";
 
 /*
-TO ADD A NEW ANIMATION:
-
-1. Add its name to `type Animations` for auto-suggestion
-2. Add its transitions from/to other animations (if applicable)
-3. Add a trigger for it somewhere (sprite.state = <ANIMATION_NAME>) 
+TO ADD A NEW ANIMATIO, simply implement its trigger in Sprite.update.
+A non-existent animation means the sprite won't be rendered and
+a warning will go off (in DEBUG mode)
 
 Please note that "Animation" and "State" are treated as the same thing
 So it's valid to check if an animation has finished.
@@ -39,7 +37,7 @@ export class Sprite {
     private spritesheet: Spritesheet_Friend;
 
     // current animation
-    animation: string;
+    private animation_: string;
     private frameIndex: number;
     private lastAnimationStep: number;
 
@@ -53,7 +51,7 @@ export class Sprite {
         spritesheet: Spritesheet,
     ) {
         this.spritesheet = spritesheet as unknown as Spritesheet_Friend;
-        this.animation = "Idle_Down";
+        this.animation_ = "Idle_Down";
         this.lastAnimation = "Idle_Down";
         this.direction = 0;
         this.lastDirection = Direction.Down;
@@ -63,8 +61,16 @@ export class Sprite {
         this.lastAnimationStep = Date.now();
     }
 
-    get animations(): { [name: string]: AnimationDesc } | null {
-        return this.spritesheet.animations;
+    set animation(value: string) {
+        if (DEBUG && (this.spritesheet.animations == null || this.spritesheet.animations[value] == null)) {
+            throw new Error(`Animation ${value} does not exist on spritesheet ${this.spritesheet.path}`);
+        }
+
+        this.animation_ = value;
+    }
+
+    get animation(): string {
+        return this.animation_;
     }
 
     get width() {
@@ -87,7 +93,7 @@ export class Sprite {
         else if (this.lastDirection & Direction.Right) animation += "Right";
 
         if (animation != this.lastAnimation) {
-            this.animation = animation;
+            this.animation_ = animation;
             this.frameIndex = 0;
             this.lastAnimationStep = Date.now();
         }
@@ -97,7 +103,7 @@ export class Sprite {
     draw(renderer: Renderer, layer: number, pos = v2(), rot = 0, scale = v2(1, 1)) {
         if (!this.spritesheet.loaded_) return;
 
-        const anim = this.spritesheet.animations![this.animation];
+        const anim = this.spritesheet.animations![this.animation_];
         if (!anim) return;
 
         const now = Date.now();
@@ -107,7 +113,7 @@ export class Sprite {
         }
 
         for (const spriteLayer of Object.keys(this.spritesheet.layers!)) {
-            const anim = this.spritesheet.layers![spriteLayer][this.animation];
+            const anim = this.spritesheet.layers![spriteLayer][this.animation_];
             if (!anim) continue;
 
             const uv = anim.frames[this.frameIndex].uv;

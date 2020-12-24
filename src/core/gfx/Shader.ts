@@ -1,17 +1,6 @@
 
-import { setImmediate } from "core/utils";
-import { Fragment } from "preact";
 import { createShader, createProgram } from "./Common";
 import { ErrorKind, GLError } from "./Error";
-
-type Attribute = number;
-
-interface ShaderOptions {
-    sources: {
-        vertex: string,
-        fragment: string
-    }
-}
 
 type UniformSetter = (data: number | number[]) => void;
 
@@ -23,7 +12,6 @@ type Uniform = {
     readonly set: UniformSetter;
 };
 
-let boundShader: WebGLProgram | null = null;
 export class Shader {
     private static ID_SEQUENCE = 0;
     public readonly id: number;
@@ -59,12 +47,10 @@ export class Shader {
 
     bind() {
         GL.useProgram(this.program);
-        boundShader = this.program;
     }
 
     unbind() {
         GL.useProgram(null);
-        boundShader = null;
     }
 }
 
