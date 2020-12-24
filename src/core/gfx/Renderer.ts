@@ -1,6 +1,6 @@
 import { Matrix3, m3, Vector2, Vector4, v4, Vector3 } from "core/math";
 import { Buffer, Camera, Shader, Texture, VertexArray } from "core/gfx";
-import { DynamicBuffer, StaticBuffer } from "./Buffer";
+import { DynamicBuffer } from "./Buffer";
 import * as Shaders from "./glsl";
 import * as Meshes from "./mesh";
 

@@ -1,4 +1,4 @@
-import { v2, Vector2 } from "core/math";
+import { v2 } from "core/math";
 import { Renderer } from "./Renderer";
 import { Texture, TextureKind } from "./Texture";
 import { Friend } from "core/utils";

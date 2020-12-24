@@ -1,5 +1,4 @@
 import { createTexture } from "./Common";
-import { ErrorKind, GLError } from "./Error";
 
 export interface TextureBaseOptions {
     internalFormat?: GLenum;

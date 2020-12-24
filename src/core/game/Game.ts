@@ -1,8 +1,6 @@
 import OverlayContainer from "app/Overlay";
 import * as Core from "core";
-import { v2, Vector2, Matrix3, m3, World } from "core";
-import { AABB, aabb_aabb, v3, v4, Vector3, Vector4 } from "core/math";
-import { Socket } from "core/net";
+import { World } from "core";
 
 /*
 high priority:
