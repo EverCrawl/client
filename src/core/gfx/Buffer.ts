@@ -33,7 +33,6 @@ export class Buffer<Type extends "static" | "dynamic"> {
     private info_: TypedArrayInfo | undefined;
 
     private constructor(
-        public readonly gl: WebGL2RenderingContext,
         public readonly handle: WebGLBuffer,
         public readonly target: GLenum,
         public readonly usage: GLenum,
@@ -53,69 +52,67 @@ export class Buffer<Type extends "static" | "dynamic"> {
     get elementTypeName() { return this.info_?.typeName; }
 
     bind() {
-        this.gl.bindBuffer(this.target, this.handle);
+        GL.bindBuffer(this.target, this.handle);
     }
 
     unbind() {
-        this.gl.bindBuffer(this.target, null);
+        GL.bindBuffer(this.target, null);
     }
 
     upload(data: ArrayBufferView | ArrayBuffer, dstOffset = -1) {
-        if (DEBUG && this.usage === this.gl.STATIC_DRAW)
+        if (DEBUG && this.usage === GL.STATIC_DRAW)
             throw new Error(`Attempted to overwrite static buffer`);
 
         this.info_ = getTypedArrayInfo(data);
 
         this.bind();
         if (dstOffset === -1) {
-            this.gl.bufferData(this.target, data, this.usage);
+            GL.bufferData(this.target, data, this.usage);
         } else {
             if (DEBUG && this.byteLength_ < dstOffset + data.byteLength)
                 throw new Error(`Buffer overflow: ${dstOffset + data.byteLength}/${this.byteLength_}`);
-            this.gl.bufferSubData(this.target, dstOffset, data);
+            GL.bufferSubData(this.target, dstOffset, data);
         }
         this.unbind();
     }
 
     static static(
-        gl: WebGL2RenderingContext,
         data: ArrayBufferView | ArrayBuffer,
         target: GLenum
     ): StaticBuffer {
-        const handle = createBuffer(gl);
+        const handle = createBuffer();
 
-        gl.bindBuffer(target, handle);
-        gl.bufferData(target, data, gl.STATIC_DRAW);
-        gl.bindBuffer(target, null);
+        GL.bindBuffer(target, handle);
+        GL.bufferData(target, data, GL.STATIC_DRAW);
+        GL.bindBuffer(target, null);
 
         const byteLength = data.byteLength;
         const info = getTypedArrayInfo(data);
 
-        return new Buffer<"static">(gl, handle, target, gl.STATIC_DRAW, byteLength, info);
+        return new Buffer<"static">(handle, target, GL.STATIC_DRAW, byteLength, info);
     }
 
     static dynamic(
-        gl: WebGL2RenderingContext,
         data: ArrayBufferView | ArrayBuffer | number | null,
         target: GLenum
     ): DynamicBuffer {
-        const handle = createBuffer(gl);
+        const handle = createBuffer();
 
         let byteLength = 0;
         let info: TypedArrayInfo | undefined;
         if (data != null) {
-            gl.bindBuffer(target, handle);
+            GL.bindBuffer(target, handle);
             if (typeof data === "number") {
                 byteLength = data;
-                gl.bufferData(target, data, gl.DYNAMIC_DRAW);
+                GL.bufferData(target, data, GL.DYNAMIC_DRAW);
             } else {
                 byteLength = data.byteLength;
                 info = getTypedArrayInfo(data)
-                gl.bufferData(target, data, gl.DYNAMIC_DRAW);
+                GL.bufferData(target, data, GL.DYNAMIC_DRAW);
             }
-            gl.bindBuffer(target, null);
+            GL.bindBuffer(target, null);
         }
 
-        return new Buffer<"dynamic">(gl, handle, target, gl.DYNAMIC_DRAW, byteLength, info);
+        return new Buffer<"dynamic">(handle, target, GL.DYNAMIC_DRAW, byteLength, info);
     }
 }

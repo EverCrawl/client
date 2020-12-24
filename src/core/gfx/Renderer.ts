@@ -37,13 +37,9 @@ export class SpriteRenderer {
     private commandBuffer: { [layer: number]: SpriteRenderCommand[] };
 
     constructor(
-        public readonly gl: WebGL2RenderingContext,
         private options: SpriteRendererOptions = {}
     ) {
-        this.gl = gl;
-
         this.shader = new Shader(
-            this.gl,
             `#version 300 es
 precision mediump float;
 
@@ -91,22 +87,15 @@ void main()
         ];
 
         this.buffers = {
-            vertex: Buffer.static(this.gl, new Float32Array(vertices), this.gl.ARRAY_BUFFER),
-            index: Buffer.static(this.gl, new Int32Array(indices), this.gl.ELEMENT_ARRAY_BUFFER)
+            vertex: Buffer.static(new Float32Array(vertices), GL.ARRAY_BUFFER),
+            index: Buffer.static(new Int32Array(indices), GL.ELEMENT_ARRAY_BUFFER)
         };
-        this.vertexArray = new VertexArray(this.gl,
-            [
-                {
-                    buffer: this.buffers.vertex, descriptors: [
-                        { location: 0, arraySize: 2, baseType: this.gl.FLOAT, normalized: false },
-                        { location: 1, arraySize: 2, baseType: this.gl.FLOAT, normalized: false },
-                    ]
-                },
-                {
-                    buffer: this.buffers.index, descriptors: []
-                }
+        this.vertexArray = new VertexArray([{
+            buffer: this.buffers.vertex, descriptors: [
+                { location: 0, arraySize: 2, baseType: GL.FLOAT, normalized: false },
+                { location: 1, arraySize: 2, baseType: GL.FLOAT, normalized: false },
             ]
-        );
+        }, { buffer: this.buffers.index, descriptors: [] }]);
 
         this.commandBuffer = {};
     }
@@ -115,8 +104,8 @@ void main()
      * Begin recording commands
      */
     begin(camera: Camera) {
-        this.gl.enable(this.gl.BLEND);
-        this.gl.blendFunc(this.gl.SRC_ALPHA, this.gl.ONE_MINUS_SRC_ALPHA);
+        GL.enable(GL.BLEND);
+        GL.blendFunc(GL.SRC_ALPHA, GL.ONE_MINUS_SRC_ALPHA);
 
         this.shader.bind();
         this.shader.uniforms.uVIEW.set(camera.view);
@@ -177,7 +166,7 @@ void main()
         cmd.texture && cmd.texture.bind(0);
         this.shader.uniforms.uUV.set(cmd.uv);
         this.shader.uniforms.uMODEL.set(cmd.model);
-        this.gl.drawElements(this.gl.TRIANGLES, 6, this.gl.UNSIGNED_INT, 0);
+        GL.drawElements(GL.TRIANGLES, 6, GL.UNSIGNED_INT, 0);
     }
 }
 
@@ -202,13 +191,9 @@ export class TileRenderer {
     private commandBuffer: { [layer: number]: TileRenderCommand[] };
 
     constructor(
-        public readonly gl: WebGL2RenderingContext,
         private options: TileRendererOptions = {}
     ) {
-        this.gl = gl;
-
         this.shader = new Shader(
-            this.gl,
             `#version 300 es
 precision mediump float;
 
@@ -259,22 +244,18 @@ void main()
         ];
 
         this.buffers = {
-            vertex: Buffer.static(this.gl, new Float32Array(vertices), this.gl.ARRAY_BUFFER),
-            index: Buffer.static(this.gl, new Int32Array(indices), this.gl.ELEMENT_ARRAY_BUFFER)
+            vertex: Buffer.static(new Float32Array(vertices), GL.ARRAY_BUFFER),
+            index: Buffer.static(new Int32Array(indices), GL.ELEMENT_ARRAY_BUFFER)
         };
-        this.vertexArray = new VertexArray(this.gl,
-            [
-                {
-                    buffer: this.buffers.vertex, descriptors: [
-                        { location: 0, arraySize: 2, baseType: this.gl.FLOAT, normalized: false },
-                        { location: 1, arraySize: 2, baseType: this.gl.FLOAT, normalized: false },
-                    ]
-                },
-                {
-                    buffer: this.buffers.index, descriptors: []
-                }
+        this.vertexArray = new VertexArray([{
+            buffer: this.buffers.vertex, descriptors: [
+                { location: 0, arraySize: 2, baseType: GL.FLOAT, normalized: false },
+                { location: 1, arraySize: 2, baseType: GL.FLOAT, normalized: false },
             ]
-        );
+        },
+        {
+            buffer: this.buffers.index, descriptors: []
+        }]);
 
         this.commandBuffer = {};
 
@@ -284,8 +265,8 @@ void main()
      * Begin recording commands
      */
     begin(camera: Camera) {
-        this.gl.enable(this.gl.BLEND);
-        this.gl.blendFunc(this.gl.SRC_ALPHA, this.gl.ONE_MINUS_SRC_ALPHA);
+        GL.enable(GL.BLEND);
+        GL.blendFunc(GL.SRC_ALPHA, GL.ONE_MINUS_SRC_ALPHA);
 
         this.shader.bind();
         this.shader.uniforms.uVIEW.set(camera.view);
@@ -344,7 +325,7 @@ void main()
         cmd.texture && cmd.texture.bind(0);
         this.shader.uniforms.uTILE.set(cmd.tile);
         this.shader.uniforms.uMODEL.set(cmd.model);
-        this.gl.drawElements(this.gl.TRIANGLES, 6, this.gl.UNSIGNED_INT, 0);
+        GL.drawElements(GL.TRIANGLES, 6, GL.UNSIGNED_INT, 0);
     }
 }
 
@@ -364,14 +345,12 @@ export class LineRenderer {
     };
 
     constructor(
-        public readonly gl: WebGL2RenderingContext,
         private options: LineRendererOptions = {
             maxLines: 512,
             lineWidth: 4
         }
     ) {
-
-        this.shader = new Shader(this.gl,
+        this.shader = new Shader(
             `#version 300 es
 precision mediump float;
 uniform mat4 uVIEW;
@@ -400,13 +379,13 @@ void main()
 
         this.buffer = {
             cpu: [],
-            gpu: Buffer.dynamic(this.gl, bufferSize, this.gl.ARRAY_BUFFER)
+            gpu: Buffer.dynamic(bufferSize, GL.ARRAY_BUFFER)
         };
 
-        this.vertexArray = new VertexArray(this.gl, [{
+        this.vertexArray = new VertexArray([{
             buffer: this.buffer.gpu, descriptors: [
-                { location: 0, arraySize: 2, baseType: this.gl.FLOAT, normalized: false },
-                { location: 1, arraySize: 4, baseType: this.gl.FLOAT, normalized: false },
+                { location: 0, arraySize: 2, baseType: GL.FLOAT, normalized: false },
+                { location: 1, arraySize: 4, baseType: GL.FLOAT, normalized: false },
             ]
         }]);
     }
@@ -415,9 +394,9 @@ void main()
      * Begin recording commands
      */
     begin(camera: Camera) {
-        this.gl.lineWidth(this.options.lineWidth);
-        this.gl.enable(this.gl.BLEND);
-        this.gl.blendFunc(this.gl.SRC_ALPHA, this.gl.ONE_MINUS_SRC_ALPHA);
+        GL.lineWidth(this.options.lineWidth);
+        GL.enable(GL.BLEND);
+        GL.blendFunc(GL.SRC_ALPHA, GL.ONE_MINUS_SRC_ALPHA);
 
         this.shader.bind();
         this.shader.uniforms.uVIEW.set(camera.view);
@@ -448,7 +427,7 @@ void main()
      */
     end() {
         this.buffer.gpu.upload(new Float32Array(this.buffer.cpu), 0);
-        this.gl.drawArrays(this.gl.LINES, 0, this.buffer.cpu.length / 6);
+        GL.drawArrays(GL.LINES, 0, this.buffer.cpu.length / 6);
     }
 }
 
@@ -466,13 +445,11 @@ export class PointRenderer {
     };
 
     constructor(
-        public readonly gl: WebGL2RenderingContext,
         private options: PointRendererOptions = {
             maxPoints: 1024
         }
     ) {
         this.shader = new Shader(
-            this.gl,
             `#version 300 es
 precision mediump float;
 uniform mat4 uVIEW;
@@ -508,12 +485,12 @@ void main()
 
         this.buffer = {
             cpu: [],
-            gpu: Buffer.dynamic(this.gl, bufferSize, this.gl.ARRAY_BUFFER)
+            gpu: Buffer.dynamic(bufferSize, GL.ARRAY_BUFFER)
         }
-        this.vertexArray = new VertexArray(this.gl, [{
+        this.vertexArray = new VertexArray([{
             buffer: this.buffer.gpu, descriptors: [
-                { location: 0, arraySize: 2, baseType: this.gl.FLOAT, normalized: false },
-                { location: 1, arraySize: 3, baseType: this.gl.FLOAT, normalized: false },
+                { location: 0, arraySize: 2, baseType: GL.FLOAT, normalized: false },
+                { location: 1, arraySize: 3, baseType: GL.FLOAT, normalized: false },
             ]
         }]);
     }
@@ -522,8 +499,8 @@ void main()
      * Begin recording commands
      */
     begin(camera: Camera) {
-        this.gl.enable(this.gl.BLEND);
-        this.gl.blendFunc(this.gl.SRC_ALPHA, this.gl.ONE_MINUS_SRC_ALPHA);
+        GL.enable(GL.BLEND);
+        GL.blendFunc(GL.SRC_ALPHA, GL.ONE_MINUS_SRC_ALPHA);
 
         this.shader.bind();
         this.shader.uniforms.uVIEW.set(camera.view);
@@ -550,6 +527,6 @@ void main()
      */
     end() {
         this.buffer.gpu.upload(new Float32Array(this.buffer.cpu), 0);
-        this.gl.drawArrays(this.gl.POINTS, 0, this.buffer.cpu.length / 5);
+        GL.drawArrays(GL.POINTS, 0, this.buffer.cpu.length / 5);
     }
 }

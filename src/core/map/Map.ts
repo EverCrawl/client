@@ -145,8 +145,7 @@ export class TileMap {
     size: Vector2 = v2();
 
     constructor(
-        gl: WebGL2RenderingContext,
-        path: string,
+        path: string
     ) {
         if (TileMap.cache.has(path)) return TileMap.cache.get(path)!;
         (async () => {
@@ -156,7 +155,7 @@ export class TileMap {
 
             for (let tileset of mapData.tilesets) {
                 this.tilesets.push(
-                    Texture.create(gl, TextureKind.Atlas, {
+                    Texture.create(TextureKind.Atlas, {
                         path: tileset.image.source,
                         tilesize: 32
                     })

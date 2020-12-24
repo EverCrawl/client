@@ -12,12 +12,10 @@ export class World {
     socket: Socket;
     player: ECS.Entity;
 
-    constructor(
-        public gl: WebGL2RenderingContext
-    ) {
+    constructor() {
         this.registry = new ECS.Registry();
         this.socket = new Socket("127.0.0.1:8000", "test");
-        this.player = Player.create(this.registry, this.gl, "sprites/character.json");
+        this.player = Player.create(this.registry, "sprites/character.json");
 
         // TEMP: create some random players in the world
         const range = 8 * 32;
@@ -25,7 +23,7 @@ export class World {
             const x = -range + (Math.random() * range);
             const y = -range + (Math.random() * range);
             console.log(x, y);
-            Player.create(this.registry, this.gl, "sprites/character.json", v2(x, y));
+            Player.create(this.registry, "sprites/character.json", v2(x, y));
         }
 
         //@ts-ignore
@@ -52,7 +50,7 @@ export class World {
         camera: Camera,
         frameTime: number
     ) {
-        this.gl.clear(this.gl.COLOR_BUFFER_BIT);
+        GL.clear(GL.COLOR_BUFFER_BIT);
 
         // world offset is the opposite of the player's position
         // e.g. if we're moving right (+x), the world should move left (-x)
@@ -85,13 +83,12 @@ export class World {
 export namespace Player {
     export function create(
         registry: ECS.Registry,
-        gl: WebGL2RenderingContext,
         sprite: string,
         position: Vector2 = v2()
     ) {
         const entity = registry.create();
         // players consist of a Sprite, Collider, Position, Speed and Velocity
-        registry.emplace(entity, new Sprite(new Spritesheet(gl, sprite)));
+        registry.emplace(entity, new Sprite(new Spritesheet(sprite)));
         registry.emplace(entity, new Collider(new AABB(v2(), v2(8, 8))));
         registry.emplace(entity, new Position(position));
         registry.emplace(entity, new Speed(2));

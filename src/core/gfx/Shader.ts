@@ -27,54 +27,51 @@ let boundShader: WebGLProgram | null = null;
 export class Shader {
     private static ID_SEQUENCE = 0;
     public readonly id: number;
-    public readonly gl: WebGL2RenderingContext;
     public readonly program: WebGLProgram;
     public readonly uniforms: { [name: string]: Uniform };
 
     constructor(
-        gl: WebGL2RenderingContext,
         vertex: string, fragment: string
     ) {
         this.id = Shader.ID_SEQUENCE++;
-        this.gl = gl;
         // compile the shader
-        const program = linkProgram(this.gl,
-            compileShader(this.gl, vertex, this.gl.VERTEX_SHADER),
-            compileShader(this.gl, fragment, this.gl.FRAGMENT_SHADER)
+        const program = linkProgram(
+            compileShader(vertex, GL.VERTEX_SHADER),
+            compileShader(fragment, GL.FRAGMENT_SHADER)
         );
         this.program = program;
         // reflect uniforms
         this.uniforms = {};
         this.bind();
-        for (let i = 0, len = this.gl.getProgramParameter(this.program, this.gl.ACTIVE_UNIFORMS); i < len; ++i) {
-            const info = this.gl.getActiveUniform(this.program, i)!;
-            const location = this.gl.getUniformLocation(program, info.name)!;
+        for (let i = 0, len = GL.getProgramParameter(this.program, GL.ACTIVE_UNIFORMS); i < len; ++i) {
+            const info = GL.getActiveUniform(this.program, i)!;
+            const location = GL.getUniformLocation(program, info.name)!;
             this.uniforms[info.name] = {
                 name: info.name,
                 size: info.size,
                 type: stringifyType(info.type),
                 location,
-                set: createSetter(this.gl, info.type, location)
+                set: createSetter(info.type, location)
             };
         }
         this.unbind();
     }
 
     bind() {
-        this.gl.useProgram(this.program);
+        GL.useProgram(this.program);
         boundShader = this.program;
     }
 
     unbind() {
-        this.gl.useProgram(null);
+        GL.useProgram(null);
         boundShader = null;
     }
 }
 
-function buildShaderErrorMessage(gl: WebGL2RenderingContext, shader: WebGLShader): string {
-    const source = gl.getShaderSource(shader);
-    const log = gl.getShaderInfoLog(shader);
-    const type = gl.getShaderParameter(shader, gl.SHADER_TYPE);
+function buildShaderErrorMessage(shader: WebGLShader): string {
+    const source = GL.getShaderSource(shader);
+    const log = GL.getShaderInfoLog(shader);
+    const type = GL.getShaderParameter(shader, GL.SHADER_TYPE);
     // if both sources are null, exit early
     if (source === null) {
         return `\n${log}\n`;
@@ -117,33 +114,33 @@ function buildShaderErrorMessage(gl: WebGL2RenderingContext, shader: WebGLShader
     return lines.join("\n");
 }
 
-function compileShader(gl: WebGL2RenderingContext, source: string, type: GLenum): WebGLShader {
-    const shader = createShader(gl, type);
-    gl.shaderSource(shader, source);
-    gl.compileShader(shader);
-    if (DEBUG && gl.getShaderParameter(shader, gl.COMPILE_STATUS) === false) {
+function compileShader(source: string, type: GLenum): WebGLShader {
+    const shader = createShader(type);
+    GL.shaderSource(shader, source);
+    GL.compileShader(shader);
+    if (DEBUG && GL.getShaderParameter(shader, GL.COMPILE_STATUS) === false) {
         throw new GLError(ErrorKind.ShaderCompileFailure, {
-            type: gl.getShaderParameter(shader, gl.SHADER_TYPE) === gl.VERTEX_SHADER ? "VERTEX" : "FRAGMENT",
-            message: buildShaderErrorMessage(gl, shader)
+            type: GL.getShaderParameter(shader, GL.SHADER_TYPE) === GL.VERTEX_SHADER ? "VERTEX" : "FRAGMENT",
+            message: buildShaderErrorMessage(shader)
         }).message;
     }
     return shader;
 }
 
-function linkProgram(gl: WebGL2RenderingContext, vertex: WebGLShader, fragment: WebGLShader): WebGLProgram {
-    const program = createProgram(gl);
-    gl.attachShader(program, vertex);
-    gl.attachShader(program, fragment);
-    gl.linkProgram(program);
+function linkProgram(vertex: WebGLShader, fragment: WebGLShader): WebGLProgram {
+    const program = createProgram();
+    GL.attachShader(program, vertex);
+    GL.attachShader(program, fragment);
+    GL.linkProgram(program);
 
-    if (gl.getProgramParameter(program, /* LINK_STATUS */ 0x8B82) === false) {
-        const log = gl.getProgramInfoLog(program);
+    if (GL.getProgramParameter(program, /* LINK_STATUS */ 0x8B82) === false) {
+        const log = GL.getProgramInfoLog(program);
         throw new GLError(ErrorKind.ShaderCompileFailure, { message: `${log ?? "Unknown error"}` });
     }
     return program;
 }
 
-function createSetter(gl: WebGL2RenderingContext, /* shader: WebGLProgram,  */type: number, location: WebGLUniformLocation): UniformSetter {
+function createSetter(/* shader: WebGLProgram,  */type: number, location: WebGLUniformLocation): UniformSetter {
     // TODO: this can be simplified to not use a switch statement
     let typeInfo: [desc: "scalar" | "array" | "matrix", size: number, name: string];
     switch (type) {
@@ -222,19 +219,19 @@ function createSetter(gl: WebGL2RenderingContext, /* shader: WebGLProgram,  */ty
             // AND that the function has the right signature, without adding runtime checks, which NEED to be avoided in this case, 
             // as this (uploading uniforms) is a hotpath
             // @ts-ignore
-            gl[setter](location, data);
+            GL[setter](location, data);
         }
         case "array": return function (data) {
             if (DEBUG && (!Array.isArray(data) || data.length !== typeInfo[1]))
                 throw new GLError(ErrorKind.InvalidUniformData, { type: stringifyType(type), data });
             // @ts-ignore same as above
-            gl[setter](location, data);
+            GL[setter](location, data);
         }
         case "matrix": return function (data) {
             if (DEBUG && (!Array.isArray(data) || data.length !== typeInfo[1]))
                 throw new GLError(ErrorKind.InvalidUniformData, { type: stringifyType(type), data });
             // @ts-ignore same as above
-            gl[setter](location, false, data);
+            GL[setter](location, false, data);
         }
     }
 }

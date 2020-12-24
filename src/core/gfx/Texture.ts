@@ -38,27 +38,25 @@ export class Texture {
     private target!: GLenum;
 
     private constructor(
-        public readonly gl: WebGL2RenderingContext,
         private image: HTMLImageElement,
         private kind: TextureKind,
         private options: any
     ) {
         this.id = Texture.ID_SEQUENCE++;
-        this.gl = gl;
-        this.handle = createTexture(this.gl);
+        this.handle = createTexture();
         this.image.onload = () => {
             switch (this.kind) {
                 case TextureKind.Image2D:
-                    this.target = this.gl.TEXTURE_2D
-                    sampleImage(this.gl, this.handle, this.image, this.options);
+                    this.target = GL.TEXTURE_2D
+                    sampleImage(this.handle, this.image, this.options);
                     break;
                 case TextureKind.Atlas:
-                    this.target = this.gl.TEXTURE_2D_ARRAY
-                    sampleAtlas(this.gl, this.handle, this.image, this.options);
+                    this.target = GL.TEXTURE_2D_ARRAY
+                    sampleAtlas(this.handle, this.image, this.options);
                     break;
                 case TextureKind.Buffer:
-                    this.target = this.gl.TEXTURE_2D
-                    sampleImage(this.gl, this.handle, this.image, this.options);
+                    this.target = GL.TEXTURE_2D
+                    sampleImage(this.handle, this.image, this.options);
                     break;
             }
             this.image.onload = null;
@@ -75,15 +73,15 @@ export class Texture {
 
     bind(slot: TextureSlot) {
         if (!this.target) return;
-        this.gl.activeTexture(this.gl.TEXTURE0 + slot);
-        this.gl.bindTexture(this.target, this.handle);
+        GL.activeTexture(GL.TEXTURE0 + slot);
+        GL.bindTexture(this.target, this.handle);
     }
 
     private static readonly imageCache = new Map<string, HTMLImageElement>();
-    static create(gl: WebGL2RenderingContext, kind: TextureKind.Image2D, options: TextureImage2DOptions): Texture;
-    static create(gl: WebGL2RenderingContext, kind: TextureKind.Atlas, options: TextureAtlasOptions): Texture;
-    static create(gl: WebGL2RenderingContext, kind: TextureKind.Buffer, options: TextureBufferOptions): Texture;
-    static create(gl: WebGL2RenderingContext, kind: TextureKind, options: any): Texture {
+    static create(kind: TextureKind.Image2D, options: TextureImage2DOptions): Texture;
+    static create(kind: TextureKind.Atlas, options: TextureAtlasOptions): Texture;
+    static create(kind: TextureKind.Buffer, options: TextureBufferOptions): Texture;
+    static create(kind: TextureKind, options: any): Texture {
         let img;
         switch (kind) {
             case TextureKind.Image2D: {
@@ -111,7 +109,7 @@ export class Texture {
                     (options as TextureBufferOptions).height);
             } break;
         }
-        return new Texture(gl, img, kind, options);
+        return new Texture(img, kind, options);
     }
 }
 
@@ -133,31 +131,31 @@ function toImageElement(buffer: TextureBuffer, width: number, height: number) {
     return img;
 }
 
-function sampleImage(gl: WebGL2RenderingContext, texture: WebGLTexture, image: HTMLImageElement, options: TextureBaseOptions) {
-    const target = gl.TEXTURE_2D;
-    gl.bindTexture(target, texture);
-    gl.texImage2D(target, 0,
-        options.internalFormat ?? gl.RGBA,
-        options.format ?? gl.RGBA,
-        options.type ?? gl.UNSIGNED_BYTE,
+function sampleImage(texture: WebGLTexture, image: HTMLImageElement, options: TextureBaseOptions) {
+    const target = GL.TEXTURE_2D;
+    GL.bindTexture(target, texture);
+    GL.texImage2D(target, 0,
+        options.internalFormat ?? GL.RGBA,
+        options.format ?? GL.RGBA,
+        options.type ?? GL.UNSIGNED_BYTE,
         image);
-    gl.texParameteri(target, gl.TEXTURE_WRAP_S, options.wrap_s ?? gl.CLAMP_TO_EDGE);
-    gl.texParameteri(target, gl.TEXTURE_WRAP_T, options.wrap_t ?? gl.CLAMP_TO_EDGE);
-    gl.texParameteri(target, gl.TEXTURE_MIN_FILTER, options.filter_min ?? gl.NEAREST);
-    gl.texParameteri(target, gl.TEXTURE_MAG_FILTER, options.filter_mag ?? gl.NEAREST);
-    if (options.mipmap !== false) gl.generateMipmap(target);
-    gl.bindTexture(target, null);
+    GL.texParameteri(target, GL.TEXTURE_WRAP_S, options.wrap_s ?? GL.CLAMP_TO_EDGE);
+    GL.texParameteri(target, GL.TEXTURE_WRAP_T, options.wrap_t ?? GL.CLAMP_TO_EDGE);
+    GL.texParameteri(target, GL.TEXTURE_MIN_FILTER, options.filter_min ?? GL.NEAREST);
+    GL.texParameteri(target, GL.TEXTURE_MAG_FILTER, options.filter_mag ?? GL.NEAREST);
+    if (options.mipmap !== false) GL.generateMipmap(target);
+    GL.bindTexture(target, null);
 }
 
 const AtlasHelperCtx: CanvasRenderingContext2D = (() => {
     const canvas = document.createElement("canvas")!;
     return canvas.getContext("2d")!;
 })();
-function sampleAtlas(gl: WebGL2RenderingContext, texture: WebGLTexture, image: HTMLImageElement, options: TextureAtlasOptions) {
-    const target = gl.TEXTURE_2D_ARRAY;
-    const internalFormat = options.internalFormat ?? gl.RGBA;
-    const inputFormat = options.format ?? gl.RGBA;
-    const inputType = options.type ?? gl.UNSIGNED_BYTE;
+function sampleAtlas(texture: WebGLTexture, image: HTMLImageElement, options: TextureAtlasOptions) {
+    const target = GL.TEXTURE_2D_ARRAY;
+    const internalFormat = options.internalFormat ?? GL.RGBA;
+    const inputFormat = options.format ?? GL.RGBA;
+    const inputType = options.type ?? GL.UNSIGNED_BYTE;
     const columns = image.width / options.tilesize;
     const rows = image.height / options.tilesize;
     const depth = columns * rows;
@@ -167,8 +165,8 @@ function sampleAtlas(gl: WebGL2RenderingContext, texture: WebGLTexture, image: H
     AtlasHelperCtx.canvas.height = options.tilesize;
 
     // allocate storage
-    gl.bindTexture(target, texture);
-    gl.texImage3D(target, 0,
+    GL.bindTexture(target, texture);
+    GL.texImage3D(target, 0,
         internalFormat,
         options.tilesize, options.tilesize, depth, 0,
         inputFormat, inputType, null);
@@ -184,7 +182,7 @@ function sampleAtlas(gl: WebGL2RenderingContext, texture: WebGLTexture, image: H
             const data = AtlasHelperCtx.getImageData(0, 0, options.tilesize, options.tilesize);
 
             const layer = col + row * columns;
-            gl.texSubImage3D(target, 0,
+            GL.texSubImage3D(target, 0,
                 0, 0, layer,
                 options.tilesize, options.tilesize,
                 1,
@@ -192,12 +190,12 @@ function sampleAtlas(gl: WebGL2RenderingContext, texture: WebGLTexture, image: H
                 data);
         }
     }
-    gl.texParameteri(target, gl.TEXTURE_WRAP_S, options.wrap_s ?? gl.CLAMP_TO_EDGE);
-    gl.texParameteri(target, gl.TEXTURE_WRAP_T, options.wrap_t ?? gl.CLAMP_TO_EDGE);
-    gl.texParameteri(target, gl.TEXTURE_WRAP_R, options.wrap_t ?? gl.CLAMP_TO_EDGE);
-    gl.texParameteri(target, gl.TEXTURE_MIN_FILTER, options.filter_min ?? gl.NEAREST);
-    gl.texParameteri(target, gl.TEXTURE_MAG_FILTER, options.filter_mag ?? gl.NEAREST);
-    if (options.mipmap !== false) gl.generateMipmap(target);
+    GL.texParameteri(target, GL.TEXTURE_WRAP_S, options.wrap_s ?? GL.CLAMP_TO_EDGE);
+    GL.texParameteri(target, GL.TEXTURE_WRAP_T, options.wrap_t ?? GL.CLAMP_TO_EDGE);
+    GL.texParameteri(target, GL.TEXTURE_WRAP_R, options.wrap_t ?? GL.CLAMP_TO_EDGE);
+    GL.texParameteri(target, GL.TEXTURE_MIN_FILTER, options.filter_min ?? GL.NEAREST);
+    GL.texParameteri(target, GL.TEXTURE_MAG_FILTER, options.filter_mag ?? GL.NEAREST);
+    if (options.mipmap !== false) GL.generateMipmap(target);
 
-    gl.bindTexture(target, null);
+    GL.bindTexture(target, null);
 }

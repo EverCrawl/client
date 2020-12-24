@@ -7,7 +7,6 @@ import { Socket } from "core/net";
 
 /*
 high priority:
-TODO: global GL
 TODO: join renderers into just one
     - they all share the same GL state
     - rendering passes are already hardcoded,
@@ -29,7 +28,6 @@ TODO: playtest deployment
 export class Game {
     overlay: OverlayContainer;
     canvas: HTMLCanvasElement;
-    gl: WebGL2RenderingContext;
 
     viewport: Core.Viewport;
     camera: Core.Camera;
@@ -48,24 +46,24 @@ export class Game {
     ) {
         this.overlay = overlay;
         this.canvas = canvas;
-        this.gl = Core.getContext(this.canvas, "webgl2", {
+        Core.InitGL(this.canvas, {
             alpha: false,
             depth: false,
             stencil: false,
             premultipliedAlpha: true,
         });
-        this.viewport = new Core.Viewport(this.gl);
+        this.viewport = new Core.Viewport();
         this.camera = new Core.Camera(this.viewport);
         this.renderer = {
-            sprite: new Core.SpriteRenderer(this.gl),
-            tile: new Core.TileRenderer(this.gl),
-            line: new Core.LineRenderer(this.gl),
-            point: new Core.PointRenderer(this.gl)
+            sprite: new Core.SpriteRenderer(),
+            tile: new Core.TileRenderer(),
+            line: new Core.LineRenderer(),
+            point: new Core.PointRenderer()
         };
 
-        this.world = new World(this.gl);
+        this.world = new World();
         // TEMP
-        this.world.tilemap = new Core.TileMap(this.gl, "maps/template.tmx");
+        this.world.tilemap = new Core.TileMap("maps/template.tmx");
 
         //@ts-ignore
         window.Game = this;

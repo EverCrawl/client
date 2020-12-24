@@ -1,14 +1,14 @@
 
 
-export function glError(gl: WebGL2RenderingContext): string | null {
-    const error = gl.getError();
+export function glError(): string | null {
+    const error = GL.getError();
     switch (error) {
-        case gl.INVALID_ENUM: return "Unacceptable value has been specified for an enumerated argument.";
-        case gl.INVALID_VALUE: return "Numeric argument is out of range.";
-        case gl.INVALID_OPERATION: return "The specified command is not allowed for the current state.";
-        case gl.INVALID_FRAMEBUFFER_OPERATION: return "The currently bound framebuffer is not framebuffer complete when trying to render to or to read from it.";
-        case gl.OUT_OF_MEMORY: return "Not enough memory is left to execute the command.";
-        case gl.CONTEXT_LOST_WEBGL: return "The WebGL context was lost.";
+        case GL.INVALID_ENUM: return "Unacceptable value has been specified for an enumerated argument.";
+        case GL.INVALID_VALUE: return "Numeric argument is out of range.";
+        case GL.INVALID_OPERATION: return "The specified command is not allowed for the current state.";
+        case GL.INVALID_FRAMEBUFFER_OPERATION: return "The currently bound framebuffer is not framebuffer complete when trying to render to or to read from it.";
+        case GL.OUT_OF_MEMORY: return "Not enough memory is left to execute the command.";
+        case GL.CONTEXT_LOST_WEBGL: return "The WebGL context was lost.";
         default: return null;
     }
 }

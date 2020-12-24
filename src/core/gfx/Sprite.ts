@@ -153,7 +153,6 @@ interface AnimationDesc {
 }
 
 interface Spritesheet_Friend {
-    readonly gl: WebGL2RenderingContext;
     readonly path: string
     loaded_: boolean;
     animations: { [name: string]: AnimationDesc } | null;
@@ -167,7 +166,6 @@ interface Spritesheet_Friend {
 export class Spritesheet {
     private static cache: Map<string, Spritesheet> = new Map();
 
-    public readonly gl: WebGL2RenderingContext;
     public readonly path: string
     private loaded_: boolean;
 
@@ -177,10 +175,8 @@ export class Spritesheet {
     private maxSize: Size | null = null;
 
     constructor(
-        gl: WebGL2RenderingContext,
         path: string
     ) {
-        this.gl = gl;
         this.path = path;
         this.loaded_ = false;
 
@@ -201,7 +197,7 @@ export class Spritesheet {
         const transformed = parseSpriteData(json, this.path.substr(0, this.path.lastIndexOf("/")));
         this.animations = transformed.animations;
         this.layers = transformed.layers;
-        this.texture = Texture.create(this.gl, TextureKind.Image2D, { path: transformed.spritesheet, mipmap: false });
+        this.texture = Texture.create(TextureKind.Image2D, { path: transformed.spritesheet, mipmap: false });
         this.maxSize = transformed.maxSize;
         this.loaded_ = true;
         console.log(`finished loading ${this.path}`, this);

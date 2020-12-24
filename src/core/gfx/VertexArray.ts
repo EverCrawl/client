@@ -19,7 +19,7 @@ export interface BufferDescriptor {
     /**
      * Base type of the attribute
      * 
-     * e.g. for attribute `layout(location = 0) in vec2 POSITION`, it would be `gl.FLOAT`, because it's a `vec2`, which is comprised of two floats.
+     * e.g. for attribute `layout(location = 0) in vec2 POSITION`, it would be `GL.FLOAT`, because it's a `vec2`, which is comprised of two floats.
      */
     baseType: GLenum;
     /**
@@ -45,20 +45,17 @@ function sizeof(type: GLenum) {
 export class VertexArray {
     private static ID_SEQUENCE = 0;
     public readonly id: number;
-    public readonly gl: WebGL2RenderingContext;
     public readonly handle: WebGLVertexArrayObject;
 
     constructor(
-        gl: WebGL2RenderingContext,
         private buffers: { buffer: Buffer<"static" | "dynamic">, descriptors: BufferDescriptor[] }[]
     ) {
         this.id = VertexArray.ID_SEQUENCE++;
-        this.gl = gl;
-        this.handle = createVertexArray(this.gl);
+        this.handle = createVertexArray();
 
         if (DEBUG && buffers.length === 0) throw new GLError(ErrorKind.EmptyVertexArray);
 
-        this.gl.bindVertexArray(this.handle);
+        GL.bindVertexArray(this.handle);
 
         // calculate stride
         let stride = 0;
@@ -78,20 +75,20 @@ export class VertexArray {
             buffer.bind();
 
             for (let j = 0, len1 = descriptors.length; j < len1; ++j) {
-                this.gl.vertexAttribPointer(descriptors[j].location, descriptors[j].arraySize, descriptors[j].baseType, descriptors[j].normalized, stride, offset);
-                this.gl.enableVertexAttribArray(descriptors[j].location);
+                GL.vertexAttribPointer(descriptors[j].location, descriptors[j].arraySize, descriptors[j].baseType, descriptors[j].normalized, stride, offset);
+                GL.enableVertexAttribArray(descriptors[j].location);
                 offset += descriptors[j].arraySize * sizeof(descriptors[j].baseType)
             }
         }
 
-        this.gl.bindVertexArray(null);
+        GL.bindVertexArray(null);
     }
 
     bind() {
-        this.gl.bindVertexArray(this.handle);
+        GL.bindVertexArray(this.handle);
     }
 
     unbind() {
-        this.gl.bindVertexArray(null);
+        GL.bindVertexArray(null);
     }
 }
