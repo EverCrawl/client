@@ -2,6 +2,8 @@
 
 This repository hosts the game client for an online browser-based platformer.
 
+![Demo](demo.gif)
+
 ### Prerequisites
 
 * [Node](https://nodejs.org/en/) 12+
@@ -25,5 +27,3 @@ The client will be served to [`http://localhost:8080/`](http://localhost:8080/).
 ### Controls
 
 Just WASD to move, SHIFT to move faster. Currently lacks most planned gameplay features.
-
-![Demo](demo.gif)
