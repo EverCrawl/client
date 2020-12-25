@@ -49,7 +49,7 @@ export class Registry {
     private components: TypeList<Storage<Component>> = {};
     private groups: { [id: string]: Group<any> } = {};
 
-    // TODO: store entities and components by archetype
+    // TODO(speed): store entities and components by archetype
 
     /**
      * Creates an entity from provided components (if any)

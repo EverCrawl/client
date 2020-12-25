@@ -54,7 +54,6 @@ export class World {
             this.tilemap.draw(renderer, worldOffset);
         }
 
-        // TODO: convert to preprocessed view
         // draw all sprites except for player
         this.registry.group(Sprite, Position).each((entity, sprite, position) => {
             if (entity === this.player) return;
