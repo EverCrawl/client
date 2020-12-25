@@ -231,7 +231,6 @@ function parseObjectGroups(objectgroups: Element[]): Tiled.ObjectGroup[] {
     return result;
 }
 
-// TODO: use this to build an actual renderable tilemap
 export class TiledParser {
     private static parser_ = new DOMParser();
     static parse(src: string): Tiled.TileMap {

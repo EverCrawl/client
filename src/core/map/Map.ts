@@ -5,7 +5,7 @@ import { parseBool } from "core/utils";
 import { TiledParser } from "./Parser";
 import { Tiled } from "./Tiled";
 
-// TODO: broad phase
+// TODO(speed): broad phase
 function buildNarrowPhasePrimitives(layer: string, chunks: Tiled.LayerDataChunk[], size: Vector2): AABB[] {
     // phase #1: join contiguous tiles in the same row
     const rows: { x: number; y: number; length: number; }[] = [];

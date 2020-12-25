@@ -4,11 +4,6 @@ import { World } from "core";
 
 /*
 high priority:
-TODO: join renderers into just one
-    - they all share the same GL state
-    - rendering passes are already hardcoded,
-      this will just make the renderer easier
-      to use
 TODO: swept AABB
 TODO: (game server) collisions
 TODO: loading screen

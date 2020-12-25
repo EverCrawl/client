@@ -5,19 +5,10 @@ import { Friend } from "core/utils";
 
 /*
 TO ADD A NEW ANIMATIO, simply implement its trigger in Sprite.update.
-A non-existent animation means the sprite won't be rendered and
-a warning will go off (in DEBUG mode)
+A non-existent animation means the sprite won't be rendered and an error will be thrown (in DEBUG mode)
 
-Please note that "Animation" and "State" are treated as the same thing
-So it's valid to check if an animation has finished.
-
-TODO(?): add callbacks for animation start/end
+Animation existence can be checked with `sprite.animations[name] != null`
 */
-
-type Sprite_Friend = Friend<Sprite, {
-    getAnimation(): string | null;
-    setAnimation(value: string): void;
-}>;
 
 export class State {
     moving: boolean = false;
@@ -31,7 +22,15 @@ export const enum Direction {
     Down = 1 << 1,
     Left = 1 << 2,
     Right = 1 << 3
-};
+}
+
+export interface AnimationMap {
+    [name: string]: AnimationDesc;
+}
+
+export interface LayerMap {
+    [name: string]: Layer;
+}
 
 export class Sprite {
     private spritesheet: Spritesheet_Friend;
@@ -59,6 +58,10 @@ export class Sprite {
 
         this.frameIndex = 0;
         this.lastAnimationStep = Date.now();
+    }
+
+    get animations(): Readonly<AnimationMap> | null {
+        return this.spritesheet.animations;
     }
 
     set animation(value: string) {
@@ -161,8 +164,8 @@ interface AnimationDesc {
 interface Spritesheet_Friend {
     readonly path: string
     loaded_: boolean;
-    animations: { [name: string]: AnimationDesc } | null;
-    layers: { [name: string]: Layer } | null;
+    animations: AnimationMap | null;
+    layers: LayerMap | null;
     texture: Texture | null;
     maxSize: Size | null;
     readonly ready: boolean;
@@ -175,8 +178,8 @@ export class Spritesheet {
     public readonly path: string
     private loaded_: boolean;
 
-    private animations: { [name: string]: AnimationDesc } | null = null;
-    private layers: { [name: string]: Layer } | null = null;
+    private animations: AnimationMap | null = null;
+    private layers: LayerMap | null = null;
     private texture: Texture | null = null;
     private maxSize: Size | null = null;
 
