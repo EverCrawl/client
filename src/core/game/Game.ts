@@ -1,6 +1,8 @@
 import OverlayContainer from "app/Overlay";
-import * as Core from "core";
-import { World } from "core";
+import { Runtime } from "core";
+import { World } from "core/game";
+import { TileMap } from "core/map";
+import { InitGL, Viewport, Camera, Renderer } from "core/gfx";
 
 /*
 high priority:
@@ -8,6 +10,8 @@ TODO: swept AABB
 TODO: (game server) collisions
 TODO: loading screen
 TODO: UI
+TODO: animated tiles
+TODO: soft shadow under entities
 TODO(?): node.js auth/social server
 TODO: (game server) DB access
 TODO: (auth + game servers) authentication with DB
@@ -21,9 +25,8 @@ export class Game {
     overlay: OverlayContainer;
     canvas: HTMLCanvasElement;
 
-    viewport: Core.Viewport;
-    camera: Core.Camera;
-    renderer: Core.Renderer;
+    camera: Camera;
+    renderer: Renderer;
 
     world: World;
 
@@ -33,26 +36,25 @@ export class Game {
     ) {
         this.overlay = overlay;
         this.canvas = canvas;
-        Core.InitGL(this.canvas, {
+        InitGL(this.canvas, {
             alpha: false,
             depth: false,
             stencil: false,
             premultipliedAlpha: true,
         });
-        this.viewport = new Core.Viewport();
-        this.camera = new Core.Camera(this.viewport);
-        this.renderer = new Core.Renderer();
+        this.camera = new Camera(new Viewport());
+        this.renderer = new Renderer();
 
         this.world = new World();
         // TEMP
-        this.world.tilemap = new Core.TileMap("maps/template.tmx");
+        this.world.tilemap = new TileMap("maps/template.tmx");
 
         //@ts-ignore
         window.Game = this;
     }
 
     run() {
-        Core.Runtime.start(
+        Runtime.start(
             () => this.world.update(),
             (frameTime) => this.world.draw(this.renderer, this.camera, frameTime),
             1000 / 60
