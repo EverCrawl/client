@@ -4,7 +4,9 @@ import { DynamicBuffer } from "./Buffer";
 import * as Shaders from "./glsl";
 import * as Meshes from "./mesh";
 
-// TODO: draw each tilemap chunk at once through instanced rendering
+// TODO(speed): optimize rendering - it's about 94% of the frame time right now
+
+// TODO(speed): draw each tilemap chunk at once through instanced rendering
 // quad vertices + indices
 //      -> drawn N times, where N = chunk.width * chunk.height
 // 3 uniforms
@@ -27,8 +29,8 @@ interface TileRenderCommand {
 
 export class Renderer {
     private shaders: {
-        sprite: Shader;
         tile: Shader;
+        sprite: Shader;
         line: Shader;
         point: Shader;
     }
@@ -38,11 +40,11 @@ export class Renderer {
         line: VertexArray;
     }
     private commands: {
-        sprite: {
-            [layer: number]: SpriteRenderCommand[];
-        }
         tile: {
             [layer: number]: TileRenderCommand[];
+        }
+        sprite: {
+            [layer: number]: SpriteRenderCommand[];
         }
     }
     private buffers: {
@@ -77,14 +79,14 @@ export class Renderer {
             lineWidth: options.lineWidth ?? 2
         };
         this.shaders = {
-            sprite: Shaders.Sprite.compile(),
             tile: Shaders.Tile.compile(),
+            sprite: Shaders.Sprite.compile(),
             line: Shaders.Line.compile(),
             point: Shaders.Point.compile(),
         };
         this.commands = {
-            sprite: [],
-            tile: []
+            tile: [],
+            sprite: []
         };
         this.buffers = {
             point: {
@@ -116,6 +118,28 @@ export class Renderer {
     }
 
     command = {
+        tile: (
+            texture: Texture,
+            layer: number,
+            tile: number,
+            position: Vector2 = [0, 0], rotation: number = 0, scale: Vector2 = [1, 1]
+        ) => {
+            if (DEBUG && this.camera == null) {
+                throw new Error(`Renderer has no bound camera`);
+            }
+            const model = m3();
+            m3.translate(model, position);
+            m3.rotate(model, rotation);
+            m3.scale(model, scale);
+
+            const cmd: TileRenderCommand = { texture, tile, model };
+
+            if (!this.commands.tile[layer]) {
+                this.commands.tile[layer] = [cmd];
+            } else {
+                this.commands.tile[layer].push(cmd);
+            }
+        },
         quad: (
             texture: Texture,
             layer: number,
@@ -138,28 +162,6 @@ export class Renderer {
                 this.commands.sprite[layer] = [cmd];
             } else {
                 this.commands.sprite[layer].push(cmd);
-            }
-        },
-        tile: (
-            texture: Texture,
-            layer: number,
-            tile: number,
-            position: Vector2 = [0, 0], rotation: number = 0, scale: Vector2 = [1, 1]
-        ) => {
-            if (DEBUG && this.camera == null) {
-                throw new Error(`Renderer has no bound camera`);
-            }
-            const model = m3();
-            m3.translate(model, position);
-            m3.rotate(model, rotation);
-            m3.scale(model, scale);
-
-            const cmd: TileRenderCommand = { texture, tile, model };
-
-            if (!this.commands.tile[layer]) {
-                this.commands.tile[layer] = [cmd];
-            } else {
-                this.commands.tile[layer].push(cmd);
             }
         },
         line: (
@@ -192,13 +194,14 @@ export class Renderer {
         }
 
         GL.clear(GL.COLOR_BUFFER_BIT | GL.DEPTH_BUFFER_BIT);
+
+        // setup common state
         GL.lineWidth(this.options.lineWidth ?? 2);
         GL.enable(GL.BLEND);
         GL.blendFunc(GL.SRC_ALPHA, GL.ONE_MINUS_SRC_ALPHA);
 
         { // tiles
-            // TODO: instanced rendering of tiles (described above)
-            // setup
+            // setup state
             const shader = this.shaders.tile;
             shader.bind();
             shader.uniforms.uVIEW.set(this.camera!.view);
@@ -221,7 +224,7 @@ export class Renderer {
             }
         }
         { // sprites
-            // setup
+            // setup state
             const shader = this.shaders.sprite;
             shader.bind();
             shader.uniforms.uVIEW.set(this.camera!.view);
@@ -244,7 +247,7 @@ export class Renderer {
             }
         }
         { // lines
-            // setup
+            // setup state
             const shader = this.shaders.line;
             shader.bind();
             shader.uniforms.uVIEW.set(this.camera!.view);
@@ -257,7 +260,7 @@ export class Renderer {
             GL.drawArrays(GL.LINES, 0, buffer.cpu.length / 6);
         }
         { // points
-            // setup
+            // setup state
             const shader = this.shaders.point;
             shader.bind();
             shader.uniforms.uVIEW.set(this.camera!.view);
@@ -270,9 +273,10 @@ export class Renderer {
             GL.drawArrays(GL.LINES, 0, buffer.cpu.length / 5);
         }
 
-        this.commands.sprite = [];
+        // clear queues
         this.commands.tile = [];
-        this.buffers.point.cpu = [];
+        this.commands.sprite = [];
         this.buffers.line.cpu = [];
+        this.buffers.point.cpu = [];
     }
 }

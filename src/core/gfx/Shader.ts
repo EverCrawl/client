@@ -127,7 +127,6 @@ function linkProgram(vertex: WebGLShader, fragment: WebGLShader): WebGLProgram {
 }
 
 function createSetter(/* shader: WebGLProgram,  */type: number, location: WebGLUniformLocation): UniformSetter {
-    // TODO: this can be simplified to not use a switch statement
     let typeInfo: [desc: "scalar" | "array" | "matrix", size: number, name: string];
     switch (type) {
         case 0x1400:
