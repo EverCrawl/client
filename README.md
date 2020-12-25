@@ -24,4 +24,6 @@ The client will be served to [`http://localhost:8080/`](http://localhost:8080/).
 
 ### Controls
 
-Just WASD to move. Currently lacks most planned gameplay features.
+Just WASD to move, SHIFT to move faster. Currently lacks most planned gameplay features.
+
+![Demo](demo.gif)
