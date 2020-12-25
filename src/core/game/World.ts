@@ -22,7 +22,6 @@ export class World {
         for (let i = 0; i < 10; ++i) {
             const x = (Math.random() * range) - range / 2;
             const y = (Math.random() * range) - range / 2;
-            console.log(x, y);
             Player.create(this.registry, "sprites/character.json", v2(x, y));
         }
 
@@ -57,15 +56,15 @@ export class World {
 
         // TODO: convert to preprocessed view
         // draw all sprites except for player
-        for (const [entity, sprite, position] of this.registry.view(Sprite, Position)) {
-            if (entity === this.player) continue;
+        this.registry.group(Sprite, Position).each((entity, sprite, position) => {
+            if (entity === this.player) return;
 
             const interpolatedPosition = position.get(frameTime);
             sprite.draw(renderer, 0, v2(
                 worldOffset[0] + interpolatedPosition[0],
                 worldOffset[1] + interpolatedPosition[1]
             ));
-        }
+        });
 
         // draw player
         const playerSprite = this.registry.get(this.player, Sprite)!;

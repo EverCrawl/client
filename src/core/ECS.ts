@@ -28,6 +28,16 @@ export const Null: Entity = -1 >>> 0;
 interface TypeList<T> { [key: string]: T };
 interface Storage<T> { [key: number]: T };
 
+export type ComponentView<T extends Constructor<Component>[]> = (registry: Registry, callback: (entity: Entity, ...components: InstanceTypeTuple<T>) => void) => void;
+
+export class Group<T extends Constructor<Component>[]> {
+    constructor(private registry: Registry, private view: ComponentView<T>) { }
+
+    each(callback: (entity: Entity, ...components: InstanceTypeTuple<T>) => void) {
+        this.view(this.registry, callback);
+    }
+}
+
 /**
  * Registry holds all components in arrays
  *
@@ -37,6 +47,7 @@ export class Registry {
     private entitySequence: Entity = 0 >>> 0;
     private entities: Set<Entity> = new Set;
     private components: TypeList<Storage<Component>> = {};
+    private groups: { [id: string]: Group<any> } = {};
 
     // TODO: store entities and components by archetype
 
@@ -192,50 +203,6 @@ export class Registry {
     }
 
     /**
-     * Constructs a view into the registry from the given component types.
-     * The view will contain every entity which has the given component types.
-     * 
-     * If no component types are provided, returns every entity
-     * in the registry.
-     * 
-     * The resulting View type is a tuple consisting of the entity and
-     * 0 or more components. It is also `Iterable`, so you can use it in a loop,
-     * or convert it to an array and use array methods on it.
-     * 
-     * Example:
-     * ```
-     *  // Note that components MUST be classes.
-     *  class Position {
-     *      x: number = 0;
-     *      y: number = 0;
-     *  }
-     *  class Velocity {
-     *      x: number = 0;
-     *      y: number = 0;
-     *  }
-     * 
-     *  // this would be your classic position system
-     *  for(const [entity, pos, vel] of registry.view(Position, Velocity)) {
-     *      pos.x += vel.x;
-     *      pos.y += vel.y;
-     *  }
-     * 
-     *  // note that this is usually at least ~10x slower than the above,
-     *  // and you should always iterate over views directly.
-     *  // to array
-     *  const view = Array.from(registry.view(A, B));
-     *  // or using spread operator
-     *  const view = [...registry.view(A, B)];
-     *  // and use array methods...
-     *  view.forEach(([entity, a, b]) => console.log(entity, a, b));
-     *  view.reduce((acc, [entity, a, b]) => acc += (a.val + b.val));
-     * ```
-     */
-    view<T extends Constructor<Component>[]>(...types: T): View<InstanceTypeTuple<T>> {
-        return this.generateView(this, types) as View<InstanceTypeTuple<T>>;
-    }
-
-    /**
      * Returns the size of the registry (how many entities are stored)
      */
     size(): number {
@@ -255,34 +222,18 @@ export class Registry {
         return entity & 0b11111111_11111111_00000000_00000000
     }
 
-    /**
-     * Creates an iterator over entities + their components
-     */
-    private generateView = function* (
-        self: Registry,
-        types: Constructor<Component>[]
-    ) {
-        nextEntity: for (const entity of self.entities.values()) {
-            const item: [Entity, ...Component[]] = [entity];
-
-            for (const type of types) {
-                const typeName = TypeOf(type);
-                const list = self.components[typeName];
-                if (!list) continue nextEntity;
-
-                const component = list[entity];
-                if (!component) break;
-
-                item.push(component);
-            }
-
-            yield item;
+    group<T extends Constructor<Component>[]>(...types: T): Group<T> {
+        let id = "";
+        for (let i = 0; i < types.length; ++i) {
+            id += types[i].name;
         }
+        if (this.groups[id] == null) {
+            this.groups[id] = new Group(this, Preprocessor.generateView(...types));
+        }
+        return this.groups[id];
     }
 }
-
-export type ComponentView<T extends Constructor<Component>[]> = (registry: Registry, callback: (entity: Entity, ...components: InstanceTypeTuple<T>) => void) => void;
-export abstract class Preprocessor {
+abstract class Preprocessor {
     static generateView<T extends Constructor<Component>[]>(...types: T): ComponentView<T> {
         let variables = "";
         const varNames: string[] = [];

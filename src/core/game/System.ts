@@ -29,9 +29,8 @@ export function network_update(registry: ECS.Registry, socket: Socket) {
     }
 }
 
-const physics_view = ECS.Preprocessor.generateView(Position, Velocity);
 export function physics_update(registry: ECS.Registry) {
-    physics_view(registry, (_, position, velocity) => {
+    registry.group(Position, Velocity).each((_, position, velocity) => {
         position.update(v2(
             position.current[0] + velocity.value[0],
             position.current[1] + velocity.value[1]
@@ -39,9 +38,8 @@ export function physics_update(registry: ECS.Registry) {
     });
 }
 
-const collision_view = ECS.Preprocessor.generateView(Position, Collider);
 export function collision_update(registry: ECS.Registry, tilemap?: TileMap) {
-    collision_view(registry, (_, position, collider) => {
+    registry.group(Position, Collider).each((_, position, collider) => {
         const entityAABB = collider.value;
         const nextPos = position.current;
         entityAABB.moveTo(position.current);
@@ -60,9 +58,8 @@ export function collision_update(registry: ECS.Registry, tilemap?: TileMap) {
     });
 }
 
-const animation_view = ECS.Preprocessor.generateView(Sprite, Velocity);
 export function animation_update(registry: ECS.Registry) {
-    animation_view(registry, (_, sprite, velocity) => {
+    registry.group(Sprite, Velocity).each((_, sprite, velocity) => {
         let direction = 0;
         if (velocity.value[1] < 0) direction |= Direction.Up;
         else if (velocity.value[1] > 0) direction |= Direction.Down;
