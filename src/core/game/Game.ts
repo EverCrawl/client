@@ -7,13 +7,14 @@ import { InitGL, Viewport, Camera, Renderer } from "core/gfx";
 /*
 high priority:
 TODO: swept AABB
-TODO: (game server) collisions
-TODO: loading screen
-TODO: UI
-TODO: animated tiles
+TODO: particle system
 TODO: soft shadow under entities
-TODO(?): node.js auth/social server
+TODO: animated tiles
+TODO: UI
+TODO: loading screen
 TODO: (game server) DB access
+TODO: (game server) collisions
+TODO(?): node.js auth/social server
 TODO: (auth + game servers) authentication with DB
 TODO: (both) basic gameplay
      - move, attack (slash), attack (dash), attack (spell)
