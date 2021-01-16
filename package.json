@@ -11,6 +11,7 @@
         "test": "jest"
     },
     "dependencies": {
+        "packet": "git://github.com/EverCrawl/packet-ts.git",
         "preact": "^10.5.5"
     },
     "devDependencies": {

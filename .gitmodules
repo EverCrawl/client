@@ -1,3 +1,6 @@
 [submodule "assets"]
 	path = assets
 	url = https://github.com/jprochazk/underworld-assets
+[submodule "schemas"]
+	path = schemas
+	url = https://github.com/EverCrawl/schemas.git

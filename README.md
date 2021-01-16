@@ -19,7 +19,8 @@ Assets are held in a submodule, so the repository should be cloned recursively.
 ```
 $ git clone --recurse-submodules git://github.com/jprochazk/underworld-client.git
 $ cd underworld-client
-$ yarn && yarn dev
+$ npm install
+$ npm run dev
 ```
 
 The client will be served to [`http://localhost:8080/`](http://localhost:8080/).
