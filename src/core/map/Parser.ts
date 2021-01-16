@@ -1,5 +1,6 @@
 
 import { Tiled } from "./Tiled";
+import { Path } from "core";
 
 function getChildrenByTagName(element: Element | Document, tagName: string): Element[] {
     const result = [];
@@ -82,7 +83,7 @@ function parseProperties(properties: Element | undefined): Tiled.Properties {
     return result;
 }
 
-function parseTilesets(tilesets: Element[]): Tiled.TileSet[] {
+function parseTilesets(tilesets: Element[], base: string): Tiled.TileSet[] {
     const result: Tiled.TileSet[] = [];
 
     let id = 0;
@@ -107,7 +108,7 @@ function parseTilesets(tilesets: Element[]): Tiled.TileSet[] {
         if (width == null) throw new Error(`Missing TileSet Image width`);
         const height = getAttribute(imgNode, "height");
         if (height == null) throw new Error(`Missing TileSet Image height`);
-        const image: Tiled.Image = { source, width: parseInt(width), height: parseInt(height) };
+        const image: Tiled.Image = { source: Path.resolve(Path.dirname(base), source), width: parseInt(width), height: parseInt(height) };
 
         const tiles: { [id: number]: Tiled.TileSet_Tile } = {};
         const tileNodes = getChildrenByTagName(data, "tile");
@@ -233,7 +234,7 @@ function parseObjectGroups(objectgroups: Element[]): Tiled.ObjectGroup[] {
 
 export class TiledParser {
     private static parser_ = new DOMParser();
-    static parse(src: string): Tiled.TileMap {
+    static parse(src: string, path: string): Tiled.TileMap {
         const xml: XMLDocument = TiledParser.parser_.parseFromString(src, "text/xml");
 
         const map = getChildrenByTagName(xml, "map")[0];
@@ -244,7 +245,7 @@ export class TiledParser {
         result.height = parseInt(getAttribute(map, "height") ?? "0");
 
         result.properties = parseProperties(getChildrenByTagName(map, "properties")[0]);
-        result.tilesets = parseTilesets(getChildrenByTagName(map, "tileset"));
+        result.tilesets = parseTilesets(getChildrenByTagName(map, "tileset"), path);
         result.layers = parseLayers(getChildrenByTagName(map, "layer"), result.tilesets);
         result.objectgroups = parseObjectGroups(getChildrenByTagName(map, "objectgroup"));
 

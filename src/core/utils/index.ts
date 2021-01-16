@@ -3,6 +3,7 @@ export * from "./Array";
 export * from "./Filter";
 export * from "./Number";
 export * from "./Object";
+export * as Path from "./Path";
 export * from "./String";
 
 export type Constructor<T> = {

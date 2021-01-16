@@ -160,20 +160,12 @@ function createSetter(/* shader: WebGLProgram,  */type: number, location: WebGLU
             typeInfo = ["array", 3, "uniform3fv"]; break;
         case 0x8b52:
             typeInfo = ["array", 4, "uniform4fv"]; break;
-        case 0x8b55:
-            typeInfo = ["scalar", 1, "uniform1ui"]; break;
         case 0x8dc6:
             typeInfo = ["array", 2, "uniform2uiv"]; break;
         case 0x8dc7:
             typeInfo = ["array", 3, "uniform3uiv"]; break;
         case 0x8dc8:
             typeInfo = ["array", 4, "uniform4uiv"]; break;
-        case 0x8b57:
-            typeInfo = ["array", 2, "uniform2iv"]; break;
-        case 0x8b58:
-            typeInfo = ["array", 3, "uniform3iv"]; break;
-        case 0x8b59:
-            typeInfo = ["array", 4, "uniform4iv"]; break;
         case 0x8b5a:
             typeInfo = ["matrix", 2 * 2, "uniformMatrix2fv"]; break;
         case 0x8b65:

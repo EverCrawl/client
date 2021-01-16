@@ -149,7 +149,7 @@ export class TileMap {
     ) {
         if (TileMap.cache.has(path)) return TileMap.cache.get(path)!;
         (async () => {
-            const mapData = TiledParser.parse(await (await fetch(path)).text());
+            const mapData = TiledParser.parse(await (await fetch(path)).text(), path);
 
             this.size = calcRealMapSize(mapData);
 

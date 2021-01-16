@@ -15,14 +15,14 @@ export class World {
     constructor() {
         this.registry = new ECS.Registry();
         this.socket = new Socket("127.0.0.1:8000", "test");
-        this.player = Player.create(this.registry, "sprites/character.json");
+        this.player = Player.create(this.registry, "assets/sprites/character.json");
 
         // TEMP: create some random players in the world
         const range = 16 * 32;
         for (let i = 0; i < 10; ++i) {
             const x = (Math.random() * range) - range / 2;
             const y = (Math.random() * range) - range / 2;
-            Player.create(this.registry, "sprites/character.json", v2(x, y));
+            Player.create(this.registry, "assets/sprites/character.json", v2(x, y));
         }
 
         //@ts-ignore

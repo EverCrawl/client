@@ -48,7 +48,7 @@ export class Game {
 
         this.world = new World();
         // TEMP
-        this.world.tilemap = new TileMap("maps/template.tmx");
+        this.world.tilemap = new TileMap("assets/maps/template.tmx");
 
         //@ts-ignore
         window.Game = this;
