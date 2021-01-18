@@ -1,3 +1,3 @@
 
-export * from "./Packet";
+export * from "./Message";
 export * from "./Socket";
