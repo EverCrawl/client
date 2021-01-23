@@ -1,5 +1,3 @@
-# underworld-client
-
 This repository hosts the game client for an online browser-based platformer.
 
 ![Demo](demo.gif)
