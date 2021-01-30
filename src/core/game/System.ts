@@ -1,7 +1,7 @@
 import { Collider, Position, Speed, Velocity } from './Component';
 import { ECS, Input } from "core";
 import { Sprite, Direction } from "core/gfx";
-import { TileMap, World } from "core/map";
+import { World } from "core/map";
 import { AABB, aabb_aabb, v2 } from 'core/math';
 import { Socket } from 'core/net';
 

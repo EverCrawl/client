@@ -1,6 +1,5 @@
 import OverlayContainer from "app/Overlay";
 import { ECS, Runtime, Socket } from "core";
-import { TileMap } from "core/map";
 import { InitGL, Viewport, Camera, Renderer, Sprite } from "core/gfx";
 import * as System from "./System";
 import * as Entity from "./Entity";
