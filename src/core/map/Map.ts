@@ -118,7 +118,7 @@ export class TileMap {
                     const tile = layer.tiles[x][y];
                     if (tile == null) continue;
 
-                    const tilePos = v2(position[0] + x * 32 + 16, position[1] + y * 32 + 16);
+                    const tilePos = v2(position[0] + x * 32, position[1] + y * 32);
                     renderer.command.tile(this.tilesets[0], layer_id++,
                         tile.id,
                         tilePos,

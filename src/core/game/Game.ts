@@ -2,16 +2,12 @@ import OverlayContainer from "app/Overlay";
 import { ECS, Runtime, Socket } from "core";
 import { TileMap } from "core/map";
 import { InitGL, Viewport, Camera, Renderer, Sprite } from "core/gfx";
-import {
-    animation_update, collision_update, input_update,
-    network_update, physics_update
-} from "./System";
-import {
-    Player
-} from "./Entity";
-import { v2 } from "core/math";
+import * as System from "./System";
+import * as Entity from "./Entity";
+import { AABB, v2, v4 } from "core/math";
 import { Position, Velocity, Speed, Collider } from "./Component";
 import { World } from "core/map/World";
+import { drawBorderAABB } from "core/Debug";
 
 /*
 TODO: (client) memory usage/leak audit
@@ -41,7 +37,6 @@ export class Game {
     camera: Camera;
     renderer: Renderer;
 
-    tilemap?: TileMap;
     world?: World;
     registry: ECS.Registry;
     socket: Socket;
@@ -69,9 +64,9 @@ export class Game {
         this.world = new World("assets/lmaps/test.ldtk");
 
         // TEMP
-        this.player = Player.create(this.registry,
+        this.player = Entity.Player.create(this.registry,
             "assets/sprites/character.json",
-            v2(16 * 32 + 16, 16 * 32 + 16));
+            v2(16 * 32, 16 * 32));
 
         //@ts-ignore
         window.Game = this;
@@ -86,17 +81,17 @@ export class Game {
     }
 
     update() {
-        input_update([
+        System.input([
             this.registry.get(this.player, Speed)!,
             this.registry.get<Velocity>(this.player, Velocity)!
         ]);
-        network_update(this.registry, this.socket);
-        physics_update(this.registry);
-        collision_update([
+        System.network(this.registry, this.socket);
+        System.physics(this.registry);
+        System.collision([
             this.registry.get(this.player, Position)!,
             this.registry.get(this.player, Collider)!
-        ], this.tilemap);
-        animation_update(this.registry);
+        ], this.world);
+        System.animation(this.registry);
     }
 
     draw(
@@ -115,7 +110,7 @@ export class Game {
         } */
         if (this.world) {
             // TEMP
-            this.world.level = "Level";
+            this.world.setLevel("Level");
             this.world.render(renderer, worldOffset);
         }
 
@@ -131,8 +126,13 @@ export class Game {
         });
 
         // draw player
-        const playerSprite = this.registry.get(this.player, Sprite)!;
-        playerSprite.draw(renderer, 0);
+        this.registry.get(this.player, Sprite)!
+            .draw(renderer, 0);
+        // draw player AABB
+        drawBorderAABB(renderer,
+            v2(),
+            new AABB(v2(), v2(8, 8)),
+            v4(1.0, 0.5, 1.0, 1.0));
 
         renderer.flush();
     }

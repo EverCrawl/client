@@ -12,4 +12,8 @@ export class Position extends Interpolated<Vector2> {
 
 export class Velocity extends Value<Vector2> { }
 export class Speed extends Value<number> { }
-export class Collider extends Value<AABB> { }
+export class Collider extends Value<AABB> {
+    clone() {
+        return new Collider(new AABB(v2.clone(this.value.center), v2.clone(this.value.half)))
+    }
+}

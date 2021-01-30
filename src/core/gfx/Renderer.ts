@@ -75,7 +75,7 @@ export class Renderer {
     ) {
         this.options = {
             maxLines: options.maxLines ?? 4096 * 4,
-            maxPoints: options.maxPoints ?? 4096,
+            maxPoints: options.maxPoints ?? 8192,
             lineWidth: options.lineWidth ?? 2
         };
         this.shaders = {
