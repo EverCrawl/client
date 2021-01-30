@@ -50,6 +50,7 @@ export namespace Tiled {
     export interface Tile {
         tileset: Tiled.TileSet;
         id: number;
+        collision: boolean;
     }
 
     export interface LayerDataChunk {

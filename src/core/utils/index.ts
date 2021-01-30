@@ -40,3 +40,5 @@ export function parseBool(value: string): boolean | null {
         default: return null;
     }
 }
+
+export type Array2D<T> = T[][];

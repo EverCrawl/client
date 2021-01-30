@@ -1,6 +1,7 @@
 
 import { Tiled } from "./Tiled";
 import { Path } from "core";
+import { parseBool } from "core/utils";
 
 function getChildrenByTagName(element: Element | Document, tagName: string): Element[] {
     const result = [];
@@ -35,7 +36,7 @@ function parseValue(type: Tiled.PropertyType, value: any): string | number | boo
         case Tiled.PropertyType.String: return value;
         case Tiled.PropertyType.Int: return parseInt(value);
         case Tiled.PropertyType.Float: return parseFloat(value);
-        case Tiled.PropertyType.Bool: return value;
+        case Tiled.PropertyType.Bool: return parseBool(value)!;
         case Tiled.PropertyType.Color: return value;
         case Tiled.PropertyType.File: return value;
         case Tiled.PropertyType.Object: return value;
@@ -140,9 +141,12 @@ function decodeTile(tile: string, tilesets: Tiled.TileSet[]): Tiled.Tile | null 
     for (let i = tilesets.length - 1; i >= 0; --i) {
         const gid = parseInt(tile) & ~(0x80000000 | 0x40000000 | 0x20000000);
         if (tilesets[i].firstgid <= gid) {
+            const id = gid - tilesets[i].firstgid;
+            const collision = tilesets[i].tiles[id]?.properties["collision"]?.value ?? false;
             return {
                 tileset: tilesets[i],
-                id: gid - tilesets[i].firstgid
+                id,
+                collision,
             }
         }
     }

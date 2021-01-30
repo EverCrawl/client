@@ -1,14 +1,29 @@
 
 function connect(address: string, options: {
-    credentials?: string | string[],
+    timeout?: number,
+    credentials?: string,
     onopen?: (event: Event) => void,
     onclose?: (event: CloseEvent) => void,
     onerror?: (event: Event) => void,
     onmessage?: (event: MessageEvent<any>) => void,
 } = {}): WebSocket {
-    const ws = new WebSocket(`ws://${address}/`, options.credentials);
+    const ws = new WebSocket(`ws://${address}/`);
+    let connected = false;
+    if (options.timeout) {
+        setTimeout(() => {
+            if (!connected) {
+                ws.close(1000, "Timed out");
+            }
+        }, options.timeout);
+    }
     ws.binaryType = "arraybuffer";
-    ws.onopen = options.onopen ?? (_ => console.log(`Connected to ${address}`));
+    ws.onopen = (e) => {
+        // immediately after handshake, send credentials
+        connected = true;
+        options.credentials && ws.send(options.credentials);
+        if (options.onopen) options.onopen(e);
+        else console.log(`Connected to ${address}`);
+    }
     ws.onclose = options.onclose ?? (_ => console.log(`Disconnected from ${address}`));
     ws.onerror = options.onerror ?? (event => console.error(event));
     ws.onmessage = options.onmessage ?? (event => console.log(`Message from ${address}: ${event.data}`));
@@ -47,13 +62,16 @@ export class Socket {
     /**
      * @param address 
      * @param credentials login credentials in the form `username:password`
+     * @param timeout in milliseconds
      */
     constructor(
         public readonly address: string,
-        private credentials?: string | string[],
+        private credentials?: string,
+        timeout?: number,
     ) {
         this.packets_ = [];
         this.ws_ = connect(address, {
+            timeout,
             credentials: this.credentials,
             onopen: this._onopen,
             onclose: this._onclose,

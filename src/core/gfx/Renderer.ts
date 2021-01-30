@@ -74,8 +74,8 @@ export class Renderer {
         } = {}
     ) {
         this.options = {
-            maxLines: options.maxLines ?? 512,
-            maxPoints: options.maxPoints ?? 1024,
+            maxLines: options.maxLines ?? 4096 * 4,
+            maxPoints: options.maxPoints ?? 4096,
             lineWidth: options.lineWidth ?? 2
         };
         this.shaders = {
@@ -91,11 +91,11 @@ export class Renderer {
         this.buffers = {
             point: {
                 cpu: [],
-                gpu: Buffer.dynamic((4 * 2) + (4 * 4) * this.options.maxPoints, GL.ARRAY_BUFFER)
+                gpu: Buffer.dynamic((4 * 2) + (4 * 3) * this.options.maxPoints, GL.ARRAY_BUFFER)
             },
             line: {
                 cpu: [],
-                gpu: Buffer.dynamic((4 * 2) + (4 * 3) * this.options.maxLines, GL.ARRAY_BUFFER)
+                gpu: Buffer.dynamic((4 * 2) + (4 * 4) * this.options.maxLines, GL.ARRAY_BUFFER)
             }
         };
         this.vao = {
@@ -103,13 +103,13 @@ export class Renderer {
             point: new VertexArray([{
                 buffer: this.buffers.point.gpu, descriptors: [
                     { location: 0, arraySize: 2, baseType: GL.FLOAT, normalized: false },
-                    { location: 1, arraySize: 4, baseType: GL.FLOAT, normalized: false },
+                    { location: 1, arraySize: 3, baseType: GL.FLOAT, normalized: false },
                 ]
             }]),
             line: new VertexArray([{
                 buffer: this.buffers.line.gpu, descriptors: [
                     { location: 0, arraySize: 2, baseType: GL.FLOAT, normalized: false },
-                    { location: 1, arraySize: 3, baseType: GL.FLOAT, normalized: false },
+                    { location: 1, arraySize: 4, baseType: GL.FLOAT, normalized: false },
                 ]
             }]),
         };
@@ -248,29 +248,25 @@ export class Renderer {
         }
         { // lines
             // setup state
-            const shader = this.shaders.line;
-            shader.bind();
-            shader.uniforms.uVIEW.set(this.camera!.view);
-            shader.uniforms.uPROJECTION.set(this.camera!.projection);
+            this.shaders.line.bind();
+            this.shaders.line.uniforms.uVIEW.set(this.camera!.view);
+            this.shaders.line.uniforms.uPROJECTION.set(this.camera!.projection);
             this.vao.line.bind();
-            const buffer = this.buffers.line;
 
             // draw
-            buffer.gpu.upload(new Float32Array(buffer.cpu), 0);
-            GL.drawArrays(GL.LINES, 0, buffer.cpu.length / 6);
+            this.buffers.line.gpu.upload(new Float32Array(this.buffers.line.cpu), 0);
+            GL.drawArrays(GL.LINES, 0, this.buffers.line.cpu.length / 6);
         }
         { // points
             // setup state
-            const shader = this.shaders.point;
-            shader.bind();
-            shader.uniforms.uVIEW.set(this.camera!.view);
-            shader.uniforms.uPROJECTION.set(this.camera!.projection);
+            this.shaders.point.bind();
+            this.shaders.point.uniforms.uVIEW.set(this.camera!.view);
+            this.shaders.point.uniforms.uPROJECTION.set(this.camera!.projection);
             this.vao.point.bind();
-            const buffer = this.buffers.point;
 
             // draw
-            buffer.gpu.upload(new Float32Array(buffer.cpu), 0);
-            GL.drawArrays(GL.LINES, 0, buffer.cpu.length / 5);
+            this.buffers.point.gpu.upload(new Float32Array(this.buffers.point.cpu), 0);
+            GL.drawArrays(GL.POINTS, 0, this.buffers.point.cpu.length / 5);
         }
 
         // clear queues

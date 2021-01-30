@@ -1,3 +1,5 @@
+// TODO: convert array vectors ([x, y]) into object vectors ({ x, y })
+// because they are almost twice as fast...
 
 export * from "./Collision";
 export * from "./Common";

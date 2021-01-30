@@ -58,9 +58,16 @@ export class Texture {
                     sampleImage(this.handle, this.image, this.options);
                     break;
             }
+            if (this.onload != null) this.onload();
             this.image.onload = null;
         }
+        this.image.onerror = (ev) => {
+            if (this.onerror != null) this.onerror(ev);
+        }
     }
+
+    onload: (() => void) | null = null;
+    onerror: ((ev: string | Event) => void) | null = null;
 
     get width() {
         return this.image.naturalWidth;
