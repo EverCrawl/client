@@ -21,4 +21,10 @@ The client will be served to localhost and opened in a new browser window.
 
 ### Controls
 
-Just WASD to move, SHIFT to move faster. Currently lacks most planned gameplay features.
+- `A` and `D` to move left and right
+- `Space` to jump
+- `W` when on a ladder to grab it
+- `S` when above a ladder to grab it
+- `S` when on a platform to jump off the platform
+
+Some of the physics are still buggy, and require further testing/tweaking.
