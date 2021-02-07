@@ -8,5 +8,7 @@ export function v3(x = 0, y = 0, z = 0): Vector3 {
     return [x, y, z];
 }
 
-// @ts-ignore
-window.v3 = v3;
+if (DEBUG) {
+    // @ts-ignore |SAFETY| available globally for debugging purposes in devtools console
+    window.v3 = v3;
+}

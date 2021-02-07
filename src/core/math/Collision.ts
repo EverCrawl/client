@@ -235,6 +235,79 @@ function computeAABBPoints(center: Vector2, half: Vector2): Vector2[] {
     ];
 }
 
+function updateAABBPoints(center: Vector2, half: Vector2, points: Vector2[]) {
+    const minX = center[0] - half[0];
+    const maxX = center[0] + half[0];
+    const minY = center[1] - half[1];
+    const maxY = center[1] + half[1];
+    points[0][0] = minX; points[0][1] = minY;
+    points[1][0] = maxX; points[1][1] = minY;
+    points[2][0] = maxX; points[2][1] = maxY;
+    points[3][0] = minX; points[3][1] = maxY;
+}
+
+interface RaycastResult {
+    contact: Vector2,
+    normal: Vector2,
+    time: number
+}
+
+export class Ray {
+    public origin: Vector2;
+    public direction: Vector2;
+    constructor(from: Vector2, to: Vector2) {
+        this.origin = from;
+        this.direction = v2.sub(to, from);
+    }
+
+    cast(target: AABB): RaycastResult | null {
+        let rayInverseDir = v2.inverse(v2.clone(this.direction));
+        let timeNear = v2(
+            (target.center[0] - this.origin[0]) * rayInverseDir[0],
+            (target.center[1] - this.origin[1]) * rayInverseDir[1]
+        );
+        let timeFar = v2(
+            (target.center[0] + (target.half[0] * 2) - this.origin[0]) * rayInverseDir[0],
+            (target.center[1] + (target.half[1] * 2) - this.origin[1]) * rayInverseDir[1],
+        );
+        if (Number.isNaN(timeFar[1]) || Number.isNaN(timeFar[0])) return null;
+        if (Number.isNaN(timeNear[1]) || Number.isNaN(timeNear[0])) return null;
+        if (timeNear[0] > timeFar[0]) {
+            // swap(t_near[0], t_far[0])
+            let temp = timeNear[0];
+            timeNear[0] = timeFar[0];
+            timeFar[0] = temp;
+        }
+        if (timeNear[1] > timeFar[1]) {
+            // swap(t_near[1], t_far[1])
+            let temp = timeNear[1];
+            timeNear[1] = timeFar[1];
+            timeFar[1] = temp;
+        }
+        if (timeNear[0] > timeFar[1] || timeNear[1] > timeFar[0]) return null;
+        let hitNear = Math.max(timeNear[0], timeNear[1]);
+        let hitFar = Math.min(timeFar[0], timeFar[1]);
+        if (hitFar < 0)
+            return null;
+        let contact = v2(
+            this.origin[0] + hitNear * this.direction[0],
+            this.origin[1] + hitNear * this.direction[1]
+        );
+        let normal = v2()
+        if (timeNear[0] > timeNear[1])
+            if (rayInverseDir[0] < 0) normal = v2(1, 0);
+            else normal = v2(-1, 0);
+        else if (timeNear[0] < timeNear[1])
+            if (rayInverseDir[1] < 0) normal = v2(0, 1);
+            else normal = v2(0, -1);
+
+        return {
+            contact, normal,
+            time: hitNear
+        };
+    }
+}
+
 export class AABB {
     readonly type: "aabb" = "aabb";
 
@@ -242,65 +315,51 @@ export class AABB {
     private dirty_ = false;
 
     constructor(
-        private center_: Vector2,
-        private half_: Vector2
+        public center: Vector2,
+        public half: Vector2
     ) {
-        this.points_ = computeAABBPoints(this.center_, this.half_);
+        this.points_ = computeAABBPoints(this.center, this.half);
+    }
+
+    public clone(): AABB {
+        return new AABB(v2.clone(this.center), v2.clone(this.half));
     }
 
     public get points(): Vector2[] {
-        if (this.dirty_) this.update();
+        if (this.dirty_) updateAABBPoints(this.center, this.half, this.points_);
         return this.points_;
     }
+    public get top(): number { return this.center[1] - this.half[1] }
+    public get bottom(): number { return this.center[1] + this.half[1] }
+    public get left(): number { return this.center[0] - this.half[0] }
+    public get right(): number { return this.center[0] + this.half[0] }
 
-    public get center(): Vector2 {
-        if (this.dirty_) this.update();
-        return this.center_;
+    public translate(value: Vector2) { v2.add(this.center, value) }
+    public scale(value: Vector2) { v2.add(this.half, value) }
+
+    sweep(to: Vector2, that: AABB): RaycastResult | null {
+        const inflated = that.clone();
+        inflated.half[0] += this.half[0];
+        inflated.half[1] += this.half[1];
+
+        const ray = new Ray(this.center, to);
+        return ray.cast(that);
     }
 
-    public get half(): Vector2 {
-        if (this.dirty_) this.update();
-        return this.half_;
-    }
+    static(that: AABB): Vector2 | null {
+        const dx = that.center[0] - this.center[0];
+        const px = that.half[0] + this.half[0] - Math.abs(dx);
+        const dy = that.center[1] - this.center[1];
+        const py = that.half[1] + this.half[1] - Math.abs(dy);
+        if (px <= 0 || py <= 0) {
+            return null;
+        }
 
-    public get top(): number {
-        if (this.dirty_) this.update();
-        return this.center_[1] - this.half_[1];
-    }
-
-    public get bottom(): number {
-        if (this.dirty_) this.update();
-        return this.center_[1] + this.half_[1];
-    }
-
-    public get left(): number {
-        if (this.dirty_) this.update();
-        return this.center_[0] - this.half_[0];
-    }
-
-    public get right(): number {
-        if (this.dirty_) this.update();
-        return this.center_[0] + this.half_[0];
-    }
-
-    public moveTo(value: Vector2) {
-        this.center_ = value;
-        this.dirty_ = true;
-    }
-
-    public translate(value: Vector2) {
-        v2.add(this.center_, value);
-        this.dirty_ = true;
-    }
-
-    public scale(value: Vector2) {
-        v2.add(this.half, value);
-        this.dirty_ = true;
-    }
-
-    private update() {
-        this.points_ = computeAABBPoints(this.center_, this.half_);
-        this.dirty_ = false;
+        if (px < py) {
+            return v2(-px * Math.sign(dx), 0);
+        } else {
+            return v2(0, -py * Math.sign(dy));
+        }
     }
 }
 
@@ -690,7 +749,7 @@ export function aabb_circle(first: AABB, second: Circle): Vector2 | null {
     const aabb_center = first.center;
 
     const delta = v2.sub(v2.clone(center), aabb_center);
-    const closest = v2.add(v2.clampc(delta, v2.negate(v2.clone(aabb_half_extents)), v2.clone(aabb_half_extents)), aabb_center);
+    const closest = v2.add(v2.clamp(delta, v2.negate(v2.clone(aabb_half_extents)), v2.clone(aabb_half_extents)), aabb_center);
 
     const difference = v2.sub(v2.clone(closest), center);
     const R = second.radius;

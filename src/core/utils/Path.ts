@@ -1,10 +1,10 @@
 function normalizeStringPosix(path: string, allowAboveRoot: boolean) {
-    var res = '';
-    var lastSegmentLength = 0;
-    var lastSlash = -1;
-    var dots = 0;
-    var code;
-    for (var i = 0; i <= path.length; ++i) {
+    let res = '';
+    let lastSegmentLength = 0;
+    let lastSlash = -1;
+    let dots = 0;
+    let code;
+    for (let i = 0; i <= path.length; ++i) {
         if (i < path.length)
             code = path.charCodeAt(i);
         else if (code === 47 /*/*/)
@@ -17,7 +17,7 @@ function normalizeStringPosix(path: string, allowAboveRoot: boolean) {
             } else if (lastSlash !== i - 1 && dots === 2) {
                 if (res.length < 2 || lastSegmentLength !== 2 || res.charCodeAt(res.length - 1) !== 46 /*.*/ || res.charCodeAt(res.length - 2) !== 46 /*.*/) {
                     if (res.length > 2) {
-                        var lastSlashIndex = res.lastIndexOf('/');
+                        const lastSlashIndex = res.lastIndexOf('/');
                         if (lastSlashIndex !== res.length - 1) {
                             if (lastSlashIndex === -1) {
                                 res = '';
@@ -65,11 +65,11 @@ function normalizeStringPosix(path: string, allowAboveRoot: boolean) {
 
 export function dirname(path: string) {
     if (path.length === 0) return '.';
-    var code = path.charCodeAt(0);
-    var hasRoot = code === 47 /*/*/;
-    var end = -1;
-    var matchedSlash = true;
-    for (var i = path.length - 1; i >= 1; --i) {
+    let code = path.charCodeAt(0);
+    const hasRoot = code === 47 /*/*/;
+    let end = -1;
+    let matchedSlash = true;
+    for (let i = path.length - 1; i >= 1; --i) {
         code = path.charCodeAt(i);
         if (code === 47 /*/*/) {
             if (!matchedSlash) {
@@ -87,13 +87,31 @@ export function dirname(path: string) {
     return path.slice(0, end);
 }
 
-export function resolve(...paths: string[]) {
-    var resolvedPath = '';
-    var resolvedAbsolute = false;
-    var cwd;
+export function join(...args: string[]) {
+    if (args.length === 0)
+        return '.';
+    let joined;
+    for (let i = 0; i < args.length; ++i) {
+        const arg = args[i];
+        if (arg.length > 0) {
+            if (joined == null)
+                joined = arg;
+            else
+                joined += '/' + arg;
+        }
+    }
+    if (joined == null)
+        return '.';
+    return normalizeStringPosix(joined, false);
+}
 
-    for (var i = paths.length - 1; i >= -1 && !resolvedAbsolute; i--) {
-        var path;
+export function resolve(...paths: string[]) {
+    let resolvedPath = '';
+    let resolvedAbsolute = false;
+    let cwd;
+
+    for (let i = paths.length - 1; i >= -1 && !resolvedAbsolute; i--) {
+        let path;
         if (i >= 0)
             path = paths[i];
         else {

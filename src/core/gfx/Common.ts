@@ -5,11 +5,11 @@ declare global {
 }
 
 export function InitGL(canvas: HTMLCanvasElement, options?: WebGLContextAttributes) {
-    // @ts-ignore
+    // @ts-ignore |SAFETY| see below
     if (window.GL) throw new Error(`WebGL2 context already exists!`);
     const gl = canvas.getContext("webgl2", options);
     if (gl == null) throw new GLError(ErrorKind.ContextAcquireFailure, { contextId: "WebGL2" });
-    // @ts-ignore
+    // @ts-ignore |SAFETY| safe because only one context may exist at a time
     window.GL = gl;
 }
 

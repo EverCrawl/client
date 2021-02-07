@@ -49,7 +49,7 @@ export function m4(
         m30, m31, m32, m33
     ];
 }
-m4.clone = function (matrix: Matrix4): Matrix4 {
+m4.clone = function clone(matrix: Matrix4): Matrix4 {
     return [
         matrix[0], matrix[1], matrix[2], matrix[3],
         matrix[4], matrix[5], matrix[6], matrix[7],
@@ -57,7 +57,7 @@ m4.clone = function (matrix: Matrix4): Matrix4 {
         matrix[12], matrix[13], matrix[14], matrix[15]
     ];
 }
-/* m4.transpose = function (matrix: Matrix4): Matrix4 {
+/* m4.transpose = function transpose(matrix: Matrix4): Matrix4 {
     let temp = m4.clone(matrix);
     matrix[0] = temp[0];
     matrix[1] = temp[4];
@@ -77,7 +77,7 @@ m4.clone = function (matrix: Matrix4): Matrix4 {
     matrix[15] = temp[15];
     return matrix;
 }
-m4.invert = function (matrix: Matrix4): Matrix4 | null {
+m4.invert = function invert(matrix: Matrix4): Matrix4 | null {
     const a00 = matrix[0],
         a01 = matrix[1],
         a02 = matrix[2],
@@ -132,7 +132,7 @@ m4.invert = function (matrix: Matrix4): Matrix4 | null {
     matrix[15] = (a20 * b03 - a21 * b01 + a22 * b00) * det;
     return matrix;
 }
-m4.adjoint = function (matrix: Matrix4): Matrix4 {
+m4.adjoint = function adjoint(matrix: Matrix4): Matrix4 {
     const a00 = matrix[0],
         a01 = matrix[1],
         a02 = matrix[2],
@@ -167,7 +167,7 @@ m4.adjoint = function (matrix: Matrix4): Matrix4 {
     matrix[15] = a00 * (a11 * a22 - a12 * a21) - a10 * (a01 * a22 - a02 * a21) + a20 * (a01 * a12 - a02 * a11);
     return matrix;
 }
-m4.determinant = function (matrix: Matrix4): number {
+m4.determinant = function determinant(matrix: Matrix4): number {
     const a00 = matrix[0],
         a01 = matrix[1],
         a02 = matrix[2],
@@ -199,11 +199,11 @@ m4.determinant = function (matrix: Matrix4): number {
 
     return b00 * b11 - b01 * b10 + b02 * b09 + b03 * b08 - b04 * b07 + b05 * b06;
 }
-m4.add = function (a: Matrix4, b: Matrix4): Matrix4 {
+m4.add = function add(a: Matrix4, b: Matrix4): Matrix4 {
 }
-m4.sub = function (a: Matrix4, b: Matrix4): Matrix4 {
+m4.sub = function sub(a: Matrix4, b: Matrix4): Matrix4 {
 }
-m4.mult = function (a: Matrix4, b: Matrix4): Matrix4 {
+m4.mult = function mult(a: Matrix4, b: Matrix4): Matrix4 {
     const a00 = a[0],
         a01 = a[1],
         a02 = a[2],
@@ -256,9 +256,9 @@ m4.mult = function (a: Matrix4, b: Matrix4): Matrix4 {
     a[15] = b0 * a03 + b1 * a13 + b2 * a23 + b3 * a33;
     return a;
 }
-m4.multScalar = function (a: Matrix4, value: number): Matrix4 {
+m4.multScalar = function multScalar(a: Matrix4, value: number): Matrix4 {
 }
-m4.translate = function (matrix: Matrix4, value: Vector3): Matrix4 {
+m4.translate = function translate(matrix: Matrix4, value: Vector3): Matrix4 {
     const x = value[0],
         y = value[1],
         z = value[2];
@@ -304,21 +304,21 @@ m4.translate = function (matrix: Matrix4, value: Vector3): Matrix4 {
 
     return out;
 }
-m4.scale = function (matrix: Matrix4, value: Vector3): Matrix4 {
+m4.scale = function scale(matrix: Matrix4, value: Vector3): Matrix4 {
 }
-m4.rotate = function (matrix: Matrix4, value: Vector3, axis: Vector3): Matrix4 {
+m4.rotate = function rotate(matrix: Matrix4, value: Vector3, axis: Vector3): Matrix4 {
 }
-m4.rotateX = function (matrix: Matrix4, rad: number): Matrix4 {
+m4.rotateX = function rotateX(matrix: Matrix4, rad: number): Matrix4 {
 }
-m4.rotateY = function (matrix: Matrix4, rad: number): Matrix4 {
+m4.rotateY = function rotateY(matrix: Matrix4, rad: number): Matrix4 {
 }
-m4.rotateZ = function (matrix: Matrix4, rad: number): Matrix4 {
+m4.rotateZ = function rotateZ(matrix: Matrix4, rad: number): Matrix4 {
 }
-m4.frustum = function (left: number, right: number, bottom: number, top: number, near: number, far: number): Matrix4 {
+m4.frustum = function frustum(left: number, right: number, bottom: number, top: number, near: number, far: number): Matrix4 {
 }
-m4.perspective = function (fov: number, aspect: number, near: number, far: number): Matrix4 {
+m4.perspective = function perspective(fov: number, aspect: number, near: number, far: number): Matrix4 {
 } */
-m4.orthographic = function (left: number, right: number, bottom: number, top: number, near: number, far: number): Matrix4 {
+m4.orthographic = function orthographic(left: number, right: number, bottom: number, top: number, near: number, far: number): Matrix4 {
     const lr = 1 / (left - right);
     const bt = 1 / (top - bottom);
     const nf = 1 / (near - far);
@@ -332,7 +332,7 @@ m4.orthographic = function (left: number, right: number, bottom: number, top: nu
         tx, ty, tz, 1,
     ];
 }
-m4.lookAt = function (eye: Vector3, center: Vector3, up: Vector3 = [0, 1, 0]): Matrix4 {
+m4.lookAt = function lookAt(eye: Vector3, center: Vector3, up: Vector3 = [0, 1, 0]): Matrix4 {
     let x0, x1, x2, y0, y1, y2, z0, z1, z2, len;
     const eyex = eye[0];
     const eyey = eye[1];
@@ -404,8 +404,10 @@ m4.lookAt = function (eye: Vector3, center: Vector3, up: Vector3 = [0, 1, 0]): M
     ];
 }
 
-// @ts-ignore
-window.m4 = m4;
+if (DEBUG) {
+    // @ts-ignore |SAFETY| available globally for debugging purposes in devtools console
+    window.m4 = m4;
+}
 
 /* export class Mat4 extends Array<number> {
 
@@ -780,5 +782,7 @@ window.m4 = m4;
     }
 }
 
-//@ts-ignore
-window.Mat4 = Mat4; */
+if (DEBUG) {
+    // @ts-ignore |SAFETY| available globally for debugging purposes in devtools console
+    window.m4 = m4;window.Mat4 = Mat4;
+} */

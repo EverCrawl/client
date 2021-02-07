@@ -1,7 +1,7 @@
 // not available in node (v15.6.0) global by default
-//@ts-ignore
+//@ts-ignore |SAFETY| polyfill
 globalThis.TextEncoder = require("util").TextEncoder;
-//@ts-ignore
+//@ts-ignore |SAFETY| polyfill
 globalThis.TextDecoder = require("util").TextDecoder;
 
 import { Message } from "./Message";

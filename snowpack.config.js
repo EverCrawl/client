@@ -6,9 +6,10 @@ module.exports = {
   mount: {
     public: { url: "/", static: true },
     src: { url: "/dist" },
-    assets: { url: "/assets", static: true }
+    assets: { url: "/assets" }
   },
   plugins: [
+    "snowpack-plugin-tiled",
     "@snowpack/plugin-dotenv",
     "@snowpack/plugin-typescript"
   ],

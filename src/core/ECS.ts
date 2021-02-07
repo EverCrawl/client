@@ -38,6 +38,21 @@ export class Group<T extends Constructor<Component>[]> {
     }
 }
 
+const TagRegistry: { [id: string]: Constructor<any> } = {};
+/**
+ * Similar to JS 'Symbol', this creates a unique
+ * ECS Tag, which can be used to give an entity
+ * a unique tag, which you can query for afterwards
+ */
+export function Tag(name: string) {
+    let tag = TagRegistry[name]
+    if (tag == null) {
+        tag = Object.defineProperty(class { }, "name", { value: name });
+        TagRegistry[name] = tag;
+    }
+    return tag;
+}
+
 /**
  * Registry holds all components in arrays
  *

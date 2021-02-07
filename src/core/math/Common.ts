@@ -34,19 +34,31 @@ declare global {
 Math.EPSILON = 0.000001;
 const _PI_DIV_180 = Math.PI / 180;
 const _180_DIV_PI = 180 / Math.PI;
-window["Math"]["rad"] = (angle) => angle * _PI_DIV_180;
-window["Math"]["deg"] = (angle) => angle * _180_DIV_PI;
-window["Math"]["clamp"] = (num, min, max) => num <= min ? min : num >= max ? max : num;
-window["Math"]["lerp"] = (start, end, weight) => start * (1 - weight) + end * weight;
-window["Math"]["norm"] = (start, end, value) => (value - start) / (end - start);
-window["Math"]["fhypot"] = (...n) => {
+window["Math"]["rad"] = function rad(angle) { return angle * _PI_DIV_180 }
+window["Math"]["deg"] = function deg(angle) { return angle * _180_DIV_PI }
+window["Math"]["clamp"] = function clamp(num, min, max) {
+    if (num <= min) return min
+    if (num >= max) return max
+    return num
+}
+window["Math"]["lerp"] = function lerp(start, end, weight) {
+    return start * (1 - weight) + end * weight;
+}
+window["Math"]["norm"] = function norm(start, end, value) {
+    return (value - start) / (end - start);
+}
+window["Math"]["fhypot"] = function fhypot(...n) {
     let sum = 0;
     for (let i = 0; i < n.length; ++i) {
         sum += n[i] * n[i];
     }
     return Math.sqrt(sum);
 }
-window["Math"]["rsqrt"] = (n) => 1 / Math.sqrt(n);
-window["Math"]["ceil2"] = (n) => Math.pow(2, Math.ceil(Math.log(n) / Math.log(2)));
+window["Math"]["rsqrt"] = function rsqrt(n) {
+    return 1 / Math.sqrt(n);
+}
+window["Math"]["ceil2"] = function ceil2(n) {
+    return Math.pow(2, Math.ceil(Math.log(n) / Math.log(2)));
+}
 
 export { };

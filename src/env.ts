@@ -1,8 +1,7 @@
 
-//@ts-ignore
+//@ts-ignore |SAFETY| snowpack provides this
 let env = import.meta.env
-const DEBUG = (env.MODE === "development");
-//@ts-ignore
-window.DEBUG = DEBUG;
+//@ts-ignore |SAFETY| no other property named `DEBUG` should exist globally
+window.DEBUG = (env.MODE === "development");
 
 export { }

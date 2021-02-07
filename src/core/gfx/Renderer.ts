@@ -22,7 +22,7 @@ interface SpriteRenderCommand {
 }
 
 interface TileRenderCommand {
-    texture: Texture;
+    texture: Readonly<Texture>;
     tile: number;
     model: Matrix3;
 }
@@ -59,6 +59,8 @@ export class Renderer {
     }
 
     camera: Camera | null;
+
+    background: Vector4 = v4(0, 0, 0, 1);
 
     options: {
         maxLines: number;
@@ -119,7 +121,7 @@ export class Renderer {
 
     command = {
         tile: (
-            texture: Texture,
+            texture: Readonly<Texture>,
             layer: number,
             tile: number,
             position: Vector2 = [0, 0], rotation: number = 0, scale: Vector2 = [1, 1]
@@ -193,6 +195,7 @@ export class Renderer {
             throw new Error(`Renderer has no bound camera`);
         }
 
+        GL.clearColor(...this.background);
         GL.clear(GL.COLOR_BUFFER_BIT | GL.DEPTH_BUFFER_BIT);
 
         // setup common state

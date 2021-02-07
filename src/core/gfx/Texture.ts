@@ -67,7 +67,7 @@ export class Texture {
     }
 
     onload: (() => void) | null = null;
-    onerror: ((ev: string | Event) => void) | null = null;
+    onerror: ((ev: string | Event) => void) = e => console.error(`Error while loading texture '${this.image.src}': `, e);
 
     get width() {
         return this.image.naturalWidth;

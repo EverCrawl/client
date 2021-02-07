@@ -1,7 +1,7 @@
 import { ECS } from "core";
 import { Sprite, Spritesheet } from "core/gfx";
-import { AABB, v2, Vector2 } from "core/math";
-import { Collider, Position, Speed, Velocity } from "./Component";
+import { v2, Vector2 } from "core/math";
+import { RigidBody } from "./Component";
 
 export namespace Player {
     export function create(
@@ -10,12 +10,10 @@ export namespace Player {
         position: Vector2 = v2()
     ) {
         const entity = registry.create();
-        // players consist of a Sprite, Collider, Position, Speed and Velocity
+        // players consist of a Sprite, Collider, and a RigidBody
         registry.emplace(entity, new Sprite(new Spritesheet(sprite)));
-        registry.emplace(entity, new Collider(new AABB(v2(), v2(8, 8))));
-        registry.emplace(entity, new Position(position));
-        registry.emplace(entity, new Speed(2));
-        registry.emplace(entity, new Velocity(v2()));
+        registry.emplace(entity, ECS.Tag("Collider"));
+        registry.emplace(entity, new RigidBody(position, 2, 6));
         return entity;
     }
 }

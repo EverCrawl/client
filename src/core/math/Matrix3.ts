@@ -26,7 +26,7 @@ export interface m3 {
     sub(matrix: Matrix3): Matrix3;
     multScalar(matrix: Matrix3): Matrix3; */
 }
-m3.invert = function (matrix: Matrix3): Matrix3 {
+m3.invert = function invert(matrix: Matrix3): Matrix3 {
     const a00 = matrix[0],
         a01 = matrix[1],
         a02 = matrix[2];
@@ -70,7 +70,7 @@ export function m3(
     ];
 }
 
-m3.clone = function (matrix: Matrix3): Matrix3 {
+m3.clone = function clone(matrix: Matrix3): Matrix3 {
     return [
         matrix[0],
         matrix[1],
@@ -83,22 +83,22 @@ m3.clone = function (matrix: Matrix3): Matrix3 {
         matrix[8],
     ];
 }
-/* m3.transpose = function (matrix: Matrix3): Matrix3 {
+/* m3.transpose = function transpose(matrix: Matrix3): Matrix3 {
 
 }
-m3.invert = function (matrix: Matrix3): Matrix3 {
+m3.invert = function invert(matrix: Matrix3): Matrix3 {
 
 }
-m3.adjoint = function (matrix: Matrix3): Matrix3 {
+m3.adjoint = function adjoint(matrix: Matrix3): Matrix3 {
 
 }
-m3.determinant = function (matrix: Matrix3): Matrix3 {
+m3.determinant = function determinant(matrix: Matrix3): Matrix3 {
 
 }
-m3.mult = function (matrix: Matrix3): Matrix3 {
+m3.mult = function mult(matrix: Matrix3): Matrix3 {
 
 } */
-m3.translate = function (matrix: Matrix3, value: Vector2): Matrix3 {
+m3.translate = function translate(matrix: Matrix3, value: Vector2): Matrix3 {
     const a00 = matrix[0],
         a01 = matrix[1],
         a02 = matrix[2],
@@ -122,7 +122,7 @@ m3.translate = function (matrix: Matrix3, value: Vector2): Matrix3 {
     matrix[8] = x * a02 + y * a12 + a22;
     return matrix;
 }
-m3.scale = function (matrix: Matrix3, value: Vector2): Matrix3 {
+m3.scale = function scale(matrix: Matrix3, value: Vector2): Matrix3 {
     const x = value[0],
         y = value[1];
 
@@ -137,7 +137,7 @@ m3.scale = function (matrix: Matrix3, value: Vector2): Matrix3 {
     matrix[8] = matrix[8];
     return matrix;
 }
-m3.rotate = function (matrix: Matrix3, rad: number): Matrix3 {
+m3.rotate = function rotate(matrix: Matrix3, rad: number): Matrix3 {
     const a00 = matrix[0],
         a01 = matrix[1],
         a02 = matrix[2],
@@ -161,18 +161,20 @@ m3.rotate = function (matrix: Matrix3, rad: number): Matrix3 {
     matrix[8] = a22;
     return matrix;
 }
-/* m3.projection = function (matrix: Matrix3): Matrix3 {
+/* m3.projection = function projection(matrix: Matrix3): Matrix3 {
 
 }
-m3.add = function (matrix: Matrix3): Matrix3 {
+m3.add = function add(matrix: Matrix3): Matrix3 {
 
 }
-m3.sub = function (matrix: Matrix3): Matrix3 {
+m3.sub = function sub(matrix: Matrix3): Matrix3 {
 
 }
-m3.multScalar = function (matrix: Matrix3): Matrix3 {
+m3.multScalar = function multScalar(matrix: Matrix3): Matrix3 {
 
 } */
 
-// @ts-ignore
-window.m3 = m3;
+if (DEBUG) {
+    // @ts-ignore |SAFETY| available globally for debugging purposes in devtools console
+    window.m3 = m3;
+}

@@ -3,12 +3,7 @@ import { Renderer } from "./Renderer";
 import { Texture, TextureKind } from "./Texture";
 import { Friend } from "core/utils";
 
-/*
-TO ADD A NEW ANIMATIO, simply implement its trigger in Sprite.update.
-A non-existent animation means the sprite won't be rendered and an error will be thrown (in DEBUG mode)
-
-Animation existence can be checked with `sprite.animations[name] != null`
-*/
+// TODO: fix sprite edge bleeding
 
 export class State {
     moving: boolean = false;
@@ -18,10 +13,8 @@ export class State {
 }
 
 export const enum Direction {
-    Up = 1 << 0,
-    Down = 1 << 1,
-    Left = 1 << 2,
-    Right = 1 << 3
+    Left = -1,
+    Right = 1,
 }
 
 export interface AnimationMap {
@@ -41,19 +34,19 @@ export class Sprite {
     private lastAnimationStep: number;
 
     // determines next animation
-    private lastAnimation: string;
+    lastAnimation: string;
     direction: Direction;
-    private lastDirection: Direction;
+    lastDirection: Direction;
     moving: boolean;
 
     constructor(
         spritesheet: Spritesheet,
     ) {
         this.spritesheet = spritesheet as unknown as Spritesheet_Friend;
-        this.animation_ = "Idle_Down";
-        this.lastAnimation = "Idle_Down";
-        this.direction = 0;
-        this.lastDirection = Direction.Down;
+        this.animation_ = "Idle";
+        this.lastAnimation = "Idle";
+        this.direction = Direction.Right;
+        this.lastDirection = Direction.Right;
         this.moving = false;
 
         this.frameIndex = 0;
@@ -65,10 +58,14 @@ export class Sprite {
     }
 
     set animation(value: string) {
-        if (DEBUG && (this.spritesheet.animations == null || this.spritesheet.animations[value] == null)) {
+        if (DEBUG && this.spritesheet.ready && (this.spritesheet.animations == null || this.spritesheet.animations[value] == null)) {
             throw new Error(`Animation ${value} does not exist on spritesheet ${this.spritesheet.path}`);
         }
 
+        if (this.animation_ !== value) {
+            this.frameIndex = 0;
+            this.lastAnimationStep = Date.now();
+        }
         this.animation_ = value;
     }
 
@@ -82,25 +79,6 @@ export class Sprite {
 
     get height() {
         return (this.spritesheet.maxSize?.h ?? 0) / 2;
-    }
-
-    update() {
-        if (this.moving && (this.lastDirection != this.direction)) {
-            this.lastDirection = this.direction;
-        }
-
-        let animation = `${this.moving ? "Walk_" : "Idle_"}`;
-        if (this.lastDirection & Direction.Up) animation += "Up";
-        else if (this.lastDirection & Direction.Down) animation += "Down";
-        if (this.lastDirection & Direction.Left) animation += "Left";
-        else if (this.lastDirection & Direction.Right) animation += "Right";
-
-        if (animation != this.lastAnimation) {
-            this.animation_ = animation;
-            this.frameIndex = 0;
-            this.lastAnimationStep = Date.now();
-        }
-        this.lastAnimation = animation;
     }
 
     draw(renderer: Renderer, layer: number, pos = v2(), rot = 0, scale = v2(1, 1)) {
@@ -123,7 +101,9 @@ export class Sprite {
             const size = anim.frames[this.frameIndex].size;
             renderer.command.quad(this.spritesheet.texture!, layer,
                 [uv.x, uv.y], [uv.w, uv.h],
-                [pos[0], pos[1] - size.h / 2], rot, [size.w * scale[0], size.h * scale[1]]);
+                [pos[0], pos[1] - size.h / 2],
+                rot,
+                [size.w * scale[0] * this.direction, size.h * scale[1]]);
         }
     }
 }
@@ -209,7 +189,7 @@ export class Spritesheet {
         this.texture = Texture.create(TextureKind.Image2D, { path: transformed.spritesheet, mipmap: false });
         this.maxSize = transformed.maxSize;
         this.loaded_ = true;
-        console.log(`finished loading ${this.path}`, this);
+        console.log(`Finished loading ${this.path}`, this);
     }
 }
 
