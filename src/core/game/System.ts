@@ -17,6 +17,7 @@ export function network(registry: ECS.Registry, socket: Socket) {
 //   - make physics system more readable by splitting it up?
 //   - not too much though, it makes sense to separate it into "steps"
 //     such as "set velocity" step, the "collisionX" step, etc.
+// BUG: when facing a wall, the player can "climb" the wall by holding space
 
 const GRAVITY = 0.30;
 const TERMINAL_VELOCITY = GRAVITY * 15;
@@ -39,6 +40,10 @@ export function physics(registry: ECS.Registry, level?: Level) {
         // always reset x-velocity
         body.velocity[0] = 0;
 
+        // TODO(?): when travelling on a slope, lower horizontal velocity based on the angle
+        //      - maybe not? since velocity is applied first, it'd require checking
+        //        if the player was on a slope last update... which means another
+        //        state variable...
         // check for things that modify x-velocity
         // ATM we can only move left/right if we're not on a ladder
         if (body.cstate !== "ladder") {
@@ -64,18 +69,12 @@ export function physics(registry: ECS.Registry, level?: Level) {
                 break;
             }
             case "ladder": {
+                // TODO: decide if you should be able to jump off a ladder
+                //      - maybe just the top/bottom tiles?
                 body.velocity[1] = 0;
-                if (Input.isPressed("Space")) {
-                    // if we're on a ladder, that's jumping
-                    body.cstate = "air";
-                    body.velocity[1] = -body.jumpSpeed;
-                    if (Input.isPressed("KeyA")) body.velocity[0] -= body.speed;
-                    if (Input.isPressed("KeyD")) body.velocity[0] += body.speed;
-                } else {
-                    // or the 'up' and 'down' keys
-                    if (Input.isPressed("KeyW")) body.velocity[1] -= body.ladderSpeed;
-                    if (Input.isPressed("KeyS")) body.velocity[1] += body.ladderSpeed;
-                }
+                // if we're on a ladder, that's the 'up' and 'down' keys
+                if (Input.isPressed("KeyW")) body.velocity[1] -= body.ladderSpeed;
+                if (Input.isPressed("KeyS")) body.velocity[1] += body.ladderSpeed;
                 break;
             }
         }
@@ -87,6 +86,8 @@ export function physics(registry: ECS.Registry, level?: Level) {
         ), TILE_SCALE);
         let tileBox = new AABB(v2(), TILE_SCALE);
 
+        const centerWX = entityBox.center[0];
+        const centerWY = entityBox.center[0];
         const centerTX = Math.floor(entityBox.center[0] / TILESIZE);
         const centerTY = Math.floor(entityBox.center[1] / TILESIZE);
 
@@ -102,12 +103,12 @@ export function physics(registry: ECS.Registry, level?: Level) {
                 }
             }
             else if (Input.isPressed("KeyS")) {
-                // BUG: tapping S quickly doesn't always result in grabbing onto the ladder
-
                 // the ladder tile may also be below the entity
                 if (level.collisionKind(centerTX, centerTY + 1) === CollisionKind.Ladder) {
                     body.cstate = "ladder";
                     entityBox.center[0] = centerTX * TILESIZE + TILESIZE_HALF;
+                    // give the player a little downward boost
+                    entityBox.center[1] += 1;
                 }
             }
         }
@@ -148,108 +149,22 @@ export function physics(registry: ECS.Registry, level?: Level) {
                                 }
                                 break;
                             }
-                            // TODO: this is REALLY not dry... fix it :)
-                            // TODO: investigate jitter + "snapiness"
-                            // TODO: investigate some slopes not colliding properly
-                            case CollisionKind.SlopeLeft: {
-                                let tileRightEdgeX = TILESIZE + centerTX * TILESIZE;
-                                let entityMidX = entityBox.center[0];
-                                let weight = (tileRightEdgeX - entityMidX) / TILESIZE;
-                                let slopeBase = TILESIZE_HALF + ty * TILESIZE;
-                                tileBox.center[0] = tx * TILESIZE + TILESIZE_HALF;
-                                tileBox.center[1] = TILESIZE_HALF + slopeBase - (TILESIZE * weight);
-                                const result = entityBox.static(tileBox);
-                                if (result != null) {
-                                    if (result[1] < 0) {
+                            case CollisionKind.Ladder: {
+                                // falling onto a ladder is the same as a platform
+                                // ONLY if the tile above the ladder is an air tile
+
+                                if (level.collisionKind(tx, ty - 1) === CollisionKind.None &&
+                                    body.position.previous[1] < body.position.current[1]) {
+                                    // move the tile AABB into the tile's position
+                                    tileBox.center[0] = tx * TILESIZE + TILESIZE_HALF;
+                                    tileBox.center[1] = ty * TILESIZE + TILESIZE_HALF;
+                                    // check for collision
+                                    const result = entityBox.static(tileBox);
+                                    if (result != null && result[1] < 0) {
                                         body.cstate = "ground";
                                         body.velocity[1] = 0;
+                                        entityBox.center[1] += result[1];
                                     }
-                                    entityBox.center[1] += result[1];
-                                }
-                                break;
-                            }
-                            case CollisionKind.SlopeRight: {
-                                let tileRightEdgeX = TILESIZE + centerTX * TILESIZE;
-                                let entityMidX = entityBox.center[0];
-                                let weight = (tileRightEdgeX - entityMidX) / TILESIZE;
-                                let slopeBase = TILESIZE_HALF + ty * TILESIZE;
-                                tileBox.center[0] = tx * TILESIZE + TILESIZE_HALF;
-                                tileBox.center[1] = TILESIZE_HALF + slopeBase - (TILESIZE * (1 - weight));
-                                const result = entityBox.static(tileBox);
-                                if (result != null) {
-                                    if (result[1] < 0) {
-                                        body.cstate = "ground";
-                                        body.velocity[1] = 0;
-                                    }
-                                    entityBox.center[1] += result[1];
-                                }
-                                break;
-                            }
-                            case CollisionKind.SlopeLeftBottom: {
-                                let tileRightEdgeX = TILESIZE + centerTX * TILESIZE;
-                                let entityMidX = entityBox.center[0];
-                                let weight = (tileRightEdgeX - entityMidX) / TILESIZE;
-                                let slopeBase = TILESIZE_HALF + ty * TILESIZE;
-                                tileBox.center[0] = tx * TILESIZE + TILESIZE_HALF;
-                                tileBox.center[1] = TILESIZE_HALF + slopeBase - (TILESIZE_HALF * weight);
-                                const result = entityBox.static(tileBox);
-                                if (result != null) {
-                                    if (result[1] < 0) {
-                                        body.cstate = "ground";
-                                        body.velocity[1] = 0;
-                                    }
-                                    entityBox.center[1] += result[1];
-                                }
-                                break;
-                            }
-                            case CollisionKind.SlopeRightBottom: {
-                                let tileRightEdgeX = TILESIZE + centerTX * TILESIZE;
-                                let entityMidX = entityBox.center[0];
-                                let weight = (tileRightEdgeX - entityMidX) / TILESIZE;
-                                let slopeBase = TILESIZE_HALF + ty * TILESIZE;
-                                tileBox.center[0] = tx * TILESIZE + TILESIZE_HALF;
-                                tileBox.center[1] = TILESIZE_HALF + slopeBase - (TILESIZE_HALF * (1 - weight));
-                                const result = entityBox.static(tileBox);
-                                if (result != null) {
-                                    if (result[1] < 0) {
-                                        body.cstate = "ground";
-                                        body.velocity[1] = 0;
-                                    }
-                                    entityBox.center[1] += result[1];
-                                }
-                                break;
-                            }
-                            case CollisionKind.SlopeLeftTop: {
-                                let tileRightEdgeX = TILESIZE + centerTX * TILESIZE;
-                                let entityMidX = entityBox.center[0];
-                                let weight = (tileRightEdgeX - entityMidX) / TILESIZE;
-                                let slopeBase = TILESIZE_HALF + ty * TILESIZE;
-                                tileBox.center[0] = tx * TILESIZE + TILESIZE_HALF;
-                                tileBox.center[1] = TILESIZE_HALF + slopeBase - (TILESIZE_HALF * weight) - TILESIZE_HALF;
-                                const result = entityBox.static(tileBox);
-                                if (result != null) {
-                                    if (result[1] < 0) {
-                                        body.cstate = "ground";
-                                        body.velocity[1] = 0;
-                                    }
-                                    entityBox.center[1] += result[1];
-                                }
-                                break;
-                            }
-                            case CollisionKind.SlopeRightTop: {
-                                let tileRightEdgeX = TILESIZE + centerTX * TILESIZE;
-                                let entityMidX = entityBox.center[0];
-                                let weight = (tileRightEdgeX - entityMidX) / TILESIZE;
-                                let slopeBase = TILESIZE_HALF + ty * TILESIZE;
-                                tileBox.center[0] = tx * TILESIZE + TILESIZE_HALF;
-                                tileBox.center[1] = TILESIZE_HALF + slopeBase - (TILESIZE_HALF * (1 - weight)) - TILESIZE_HALF;
-                                const result = entityBox.static(tileBox);
-                                if (result != null) {
-                                    if (result[1] < 0) {
-                                        body.cstate = "ground";
-                                        body.velocity[1] = 0;
-                                    }
-                                    entityBox.center[1] += result[1];
                                 }
                                 break;
                             }
@@ -270,6 +185,106 @@ export function physics(registry: ECS.Registry, level?: Level) {
                                         body.velocity[1] = 0;
                                         entityBox.center[1] += result[1];
                                     }
+                                }
+                                break;
+                            }
+                            // TODO: this is REALLY not dry... fix it :)
+                            // TODO: investigate jitter + "snapiness"
+                            // TODO: investigate some slopes not colliding properly
+                            case CollisionKind.SlopeLeft: {
+                                let tileRightEdgeX = TILESIZE + tx * TILESIZE;
+                                let weight = (tileRightEdgeX - centerWX) / TILESIZE;
+                                let slopeBase = TILESIZE_HALF + ty * TILESIZE;
+                                tileBox.center[0] = tx * TILESIZE + TILESIZE_HALF;
+                                tileBox.center[1] = TILESIZE + slopeBase - (TILESIZE * weight);
+                                const result = entityBox.static(tileBox);
+                                if (result != null) {
+                                    if (result[1] < 0) {
+                                        body.cstate = "ground";
+                                        body.velocity[1] = 0;
+                                    }
+                                    entityBox.center[1] += result[1];
+                                }
+                                break;
+                            }
+                            case CollisionKind.SlopeRight: {
+                                let tileRightEdgeX = TILESIZE + tx * TILESIZE;
+                                let weight = (tileRightEdgeX - centerWX) / TILESIZE;
+                                let slopeBase = TILESIZE_HALF + ty * TILESIZE;
+                                tileBox.center[0] = tx * TILESIZE + TILESIZE_HALF;
+                                tileBox.center[1] = TILESIZE + slopeBase - (TILESIZE * (1 - weight));
+                                const result = entityBox.static(tileBox);
+                                if (result != null) {
+                                    if (result[1] < 0) {
+                                        body.cstate = "ground";
+                                        body.velocity[1] = 0;
+                                    }
+                                    entityBox.center[1] += result[1];
+                                }
+                                break;
+                            }
+                            case CollisionKind.SlopeLeftBottom: {
+                                let tileRightEdgeX = TILESIZE + tx * TILESIZE;
+                                let weight = (tileRightEdgeX - centerWX) / TILESIZE;
+                                let slopeBase = TILESIZE_HALF + ty * TILESIZE;
+                                tileBox.center[0] = tx * TILESIZE + TILESIZE_HALF;
+                                tileBox.center[1] = TILESIZE + slopeBase - (TILESIZE_HALF * weight);
+                                const result = entityBox.static(tileBox);
+                                if (result != null) {
+                                    if (result[1] < 0) {
+                                        if (Input.isPressed("KeyF")) debugger;
+                                        body.cstate = "ground";
+                                        body.velocity[1] = 0;
+                                    }
+                                    entityBox.center[1] += result[1];
+                                }
+                                break;
+                            }
+                            case CollisionKind.SlopeRightBottom: {
+                                let tileRightEdgeX = TILESIZE + tx * TILESIZE;
+                                let weight = (tileRightEdgeX - centerWX) / TILESIZE;
+                                let slopeBase = TILESIZE_HALF + ty * TILESIZE;
+                                tileBox.center[0] = tx * TILESIZE + TILESIZE_HALF;
+                                tileBox.center[1] = TILESIZE + slopeBase - (TILESIZE_HALF * (1 - weight));
+                                const result = entityBox.static(tileBox);
+                                if (result != null) {
+                                    if (result[1] < 0) {
+                                        body.cstate = "ground";
+                                        body.velocity[1] = 0;
+                                    }
+                                    entityBox.center[1] += result[1];
+                                }
+                                break;
+                            }
+                            case CollisionKind.SlopeLeftTop: {
+                                let tileRightEdgeX = TILESIZE + tx * TILESIZE;
+                                let weight = (tileRightEdgeX - centerWX) / TILESIZE;
+                                let slopeBase = TILESIZE_HALF + ty * TILESIZE;
+                                tileBox.center[0] = tx * TILESIZE + TILESIZE_HALF;
+                                tileBox.center[1] = TILESIZE + slopeBase - (TILESIZE_HALF * weight) - TILESIZE_HALF;
+                                const result = entityBox.static(tileBox);
+                                if (result != null) {
+                                    if (result[1] < 0) {
+                                        body.cstate = "ground";
+                                        body.velocity[1] = 0;
+                                    }
+                                    entityBox.center[1] += result[1];
+                                }
+                                break;
+                            }
+                            case CollisionKind.SlopeRightTop: {
+                                let tileRightEdgeX = TILESIZE + tx * TILESIZE;
+                                let weight = (tileRightEdgeX - centerWX) / TILESIZE;
+                                let slopeBase = TILESIZE_HALF + ty * TILESIZE;
+                                tileBox.center[0] = tx * TILESIZE + TILESIZE_HALF;
+                                tileBox.center[1] = TILESIZE + slopeBase - (TILESIZE_HALF * (1 - weight)) - TILESIZE_HALF;
+                                const result = entityBox.static(tileBox);
+                                if (result != null) {
+                                    if (result[1] < 0) {
+                                        body.cstate = "ground";
+                                        body.velocity[1] = 0;
+                                    }
+                                    entityBox.center[1] += result[1];
                                 }
                                 break;
                             }
@@ -321,7 +336,7 @@ export function physics(registry: ECS.Registry, level?: Level) {
                     // how far into the slope are we on the x-axis?
                     let tileRightEdgeX = TILESIZE + centerTX * TILESIZE;
                     let entityMidX = entityBox.center[0];
-                    let weight = (tileRightEdgeX - entityMidX) / TILESIZE;
+                    let weight = (tileRightEdgeX - centerWX) / TILESIZE;
 
                     let slopeBase = TILESIZE_HALF + bottomTY * TILESIZE;
 
@@ -461,10 +476,11 @@ export function physics(registry: ECS.Registry, level?: Level) {
                 // moving down
                 else if (body.velocity[1] > 0) {
                     let tx = centerTX;
-                    let ty = centerTY + 1;
-                    if (level.collisionKind(tx, ty) === CollisionKind.Full) {
+                    let ty = centerTY;
+                    let belowTileCK = level.collisionKind(tx, ty + 1);
+                    if (belowTileCK === CollisionKind.Full) {
                         tileBox.center[0] = tx * TILESIZE + TILESIZE_HALF;
-                        tileBox.center[1] = ty * TILESIZE + TILESIZE_HALF;
+                        tileBox.center[1] = (ty + 1) * TILESIZE + TILESIZE_HALF;
 
                         const result = entityBox.static(tileBox);
                         if (result != null) {
@@ -472,19 +488,22 @@ export function physics(registry: ECS.Registry, level?: Level) {
                             // if we hit something below while on a ladder
                             // exit the climbing state
                             body.cstate = "ground";
-                            // break early because the code after
-                            // this doesn't need to fire
-                            break;
                         }
+                    } else if (
+                        // if both the tile we're on and the one below
+                        // are empty tiles, fall off the ladder
+                        belowTileCK === CollisionKind.None &&
+                        level.collisionKind(tx, ty) === CollisionKind.None) {
+                        body.cstate = "air";
                     }
-
                     // if after moving down the top of the entity tile is 
                     // on an 'air' tile, then we've reached the bottom
                     // of the ladder, so exit it into the 'air' state
-                    const movedTopTY = Math.floor((entityBox.center[1] - TILESIZE_HALF) / TILESIZE);
+                    /* const movedTopTY = Math.floor((entityBox.center[1] - TILESIZE_HALF) / TILESIZE);
                     if (level.collisionKind(tx, movedTopTY) === CollisionKind.None) {
                         body.cstate = "air";
-                    }
+                    } */
+
                 }
                 break;
             }

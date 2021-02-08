@@ -12,7 +12,7 @@ import {
     TILE_SCALE,
     CollisionKind
 } from "core/map";
-import { drawBorderAABB } from "core/Debug";
+import { drawBorderAABB, drawSlope } from "core/Debug";
 
 /*
 // TODO: platformer physics
@@ -78,7 +78,7 @@ export class Game {
         // TEMP
         this.player = Entity.Player.create(this.registry,
             "assets/sprites/mushroom.json",
-            v2(50, 50));
+            v2(424, 90));
 
         if (DEBUG) {
             // @ts-ignore |SAFETY| available globally for debugging purposes in devtools console
@@ -155,46 +155,67 @@ export class Game {
                 ), 0, v2(0.5, 0.5));
             });
 
+            // debug drawing tiles
             const pbody = this.registry.get(this.player, RigidBody)!;
 
             const tileBox = new AABB(v2(), TILE_SCALE);
-            if (pbody.cstate === "ground") {
-                // 1. x-axis collision
-                // moving left
-                const ctx = Math.floor(pbody.position.current[0] / TILESIZE);
-                const cty = Math.floor(pbody.position.current[1] / TILESIZE);
-                if (this.level.collisionKind(ctx - 1, cty) === CollisionKind.Full) {
-                    drawBorderAABB(this.renderer, v2(
-                        worldOffset[0] + (ctx - 1) * TILESIZE + TILESIZE_HALF,
-                        worldOffset[1] + cty * TILESIZE + TILESIZE_HALF
-                    ), tileBox, v4(0.1, 0.8, 0.2, 1.0));
-                }
-                // moving right
-                if (this.level.collisionKind(ctx + 1, cty) === CollisionKind.Full) {
-                    drawBorderAABB(this.renderer, v2(
-                        worldOffset[0] + (ctx + 1) * TILESIZE + TILESIZE_HALF,
-                        worldOffset[1] + cty * TILESIZE + TILESIZE_HALF
-                    ), tileBox, v4(0.1, 0.8, 0.2, 1.0));
-                }
-                // 2. slope
-                renderer.command.point(v2(0, TILESIZE_HALF), v3(0.5, 0.1, 0.8));
-            }
-            else {
-                let minTX = Math.floor((pbody.position.current[0] - TILESIZE_HALF) / TILESIZE);
-                let maxTX = Math.floor((pbody.position.current[0] + TILESIZE_HALF) / TILESIZE);
-                let minTY = Math.floor((pbody.position.current[1] - TILESIZE_HALF) / TILESIZE);
-                let maxTY = Math.floor((pbody.position.current[1] + TILESIZE_HALF) / TILESIZE);
-                for (let ty = minTY; ty <= maxTY; ++ty) {
-                    for (let tx = minTX; tx <= maxTX; ++tx) {
-                        // CollisionKind.Full means solid tile
-                        if (this.level.collisionKind(tx, ty) === CollisionKind.Full) {
-                            // move the tile AABB into the tile's position
+
+            let minTX = Math.floor((pbody.position.current[0] - TILESIZE_HALF) / TILESIZE);
+            let maxTX = Math.floor((pbody.position.current[0] + TILESIZE_HALF) / TILESIZE);
+            let minTY = Math.floor((pbody.position.current[1] - TILESIZE_HALF) / TILESIZE);
+            let maxTY = Math.floor((pbody.position.current[1] + TILESIZE_HALF) / TILESIZE);
+            for (let ty = minTY; ty <= maxTY; ++ty) {
+                for (let tx = minTX; tx <= maxTX; ++tx) {
+                    // CollisionKind.Full means solid tile
+                    switch (this.level.collisionKind(tx, ty)) {
+                        case CollisionKind.Full: {
                             drawBorderAABB(this.renderer, v2(
                                 worldOffset[0] + tx * TILESIZE + TILESIZE_HALF,
                                 worldOffset[1] + ty * TILESIZE + TILESIZE_HALF
-                            ), tileBox, v4(0.1, 0.8, 0.7, 1.0));
-                        } else {
-
+                            ), tileBox, v4(1.0, 0.5, 1.0, 1.0));
+                            break;
+                        }
+                        case CollisionKind.SlopeLeft: {
+                            drawSlope(this.renderer,
+                                v2(worldOffset[0] + tx * TILESIZE, worldOffset[1] + ty * TILESIZE),
+                                CollisionKind.SlopeLeft,
+                                v4(1.0, 0.5, 1.0, 1.0));
+                            break;
+                        }
+                        case CollisionKind.SlopeRight: {
+                            drawSlope(this.renderer,
+                                v2(worldOffset[0] + tx * TILESIZE, worldOffset[1] + ty * TILESIZE),
+                                CollisionKind.SlopeRight,
+                                v4(1.0, 0.5, 1.0, 1.0));
+                            break;
+                        }
+                        case CollisionKind.SlopeLeftBottom: {
+                            drawSlope(this.renderer,
+                                v2(worldOffset[0] + tx * TILESIZE, worldOffset[1] + ty * TILESIZE),
+                                CollisionKind.SlopeLeftBottom,
+                                v4(1.0, 0.5, 1.0, 1.0));
+                            break;
+                        }
+                        case CollisionKind.SlopeRightBottom: {
+                            drawSlope(this.renderer,
+                                v2(worldOffset[0] + tx * TILESIZE, worldOffset[1] + ty * TILESIZE),
+                                CollisionKind.SlopeRightBottom,
+                                v4(1.0, 0.5, 1.0, 1.0));
+                            break;
+                        }
+                        case CollisionKind.SlopeLeftTop: {
+                            drawSlope(this.renderer,
+                                v2(worldOffset[0] + tx * TILESIZE, worldOffset[1] + ty * TILESIZE),
+                                CollisionKind.SlopeLeftTop,
+                                v4(1.0, 0.5, 1.0, 1.0));
+                            break;
+                        }
+                        case CollisionKind.SlopeRightTop: {
+                            drawSlope(this.renderer,
+                                v2(worldOffset[0] + tx * TILESIZE, worldOffset[1] + ty * TILESIZE),
+                                CollisionKind.SlopeRightTop,
+                                v4(1.0, 0.5, 1.0, 1.0));
+                            break;
                         }
                     }
                 }

@@ -243,30 +243,41 @@ export class Registry {
             id += types[i].name;
         }
         if (this.groups[id] == null) {
-            this.groups[id] = new Group(this, Preprocessor.generateView(...types));
+            this.groups[id] = new Group(this, generateView(types));
         }
         return this.groups[id];
     }
 }
-abstract class Preprocessor {
-    static generateView<T extends Constructor<Component>[]>(...types: T): ComponentView<T> {
-        let variables = "";
-        const varNames: string[] = [];
-        for (let i = 0; i < types.length; ++i) {
-            const typeName = types[i].name;
-            const varName = `_mnc${typeName}_${i}__`;
-            varNames.push(varName);
-            variables +=
-                `const ${varName} = registry.components["${typeName}"][entity];
-    if (!${varName}) continue nextEntity;
-    `;
-        }
 
-        return new Function("registry", "CALLBACK", `
-    nextEntity: for(const entity of registry.entities.values()) {
-    ${variables}
-    CALLBACK(entity, ${varNames.join(",")});
+function join(arr: string[], sep: string) {
+    let out = "";
+    let end = arr.length - 1;
+    for (let i = 0; i < end; ++i) {
+        out += arr[i] + sep
     }
-    `) as any;
+    out += arr[end]
+    return out
+}
+
+// don't really care about types here
+function generateView(types: any[]): ComponentView<any> {
+    // note: prefix _$ is used to lower the chance of name collisions
+
+    let variables = "";
+    const varNames: string[] = [];
+    for (let i = 0; i < types.length; ++i) {
+        const typeName = types[i].name;
+        const varName = `${typeName}${i}`;
+        varNames.push(varName);
+        variables += `var ${varName} = _$registry.components["${typeName}"][entity];\n`;
+        variables += `if (${varName} == null) continue nextEntity;\n`;
     }
+
+    let fn = "";
+    fn += "nextEntity: for(var entity of _$registry.entities.values()) {\n";
+    fn += `${variables}`;
+    fn += `_$callback(entity,${join(varNames, ",")});\n`
+    fn += "}";
+
+    return new Function("_$registry", "_$callback", fn) as any;
 }
