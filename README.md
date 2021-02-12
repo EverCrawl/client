@@ -1,3 +1,5 @@
+# Moved to [EverCrawl/game](https://github.com/EverCrawl/game)
+
 This repository hosts the game client for an online browser-based platformer.
 
 ### Prerequisites
